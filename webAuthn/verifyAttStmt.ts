@@ -18,7 +18,7 @@ const verifyAttStmt = async (
       if (!isV) throw new Error('Could not verify authenticity of WebAuthn register payload with included key')
       break
     case 'none':
-      console.log('Attestation statement has none type! This is unsafe!')
+      console.warn('Attestation statement has none type! This is unsafe!')
       break
     default: throw new Error(
       `Unsupported attestation format "${format}", was expecting either "packed" or "none"`

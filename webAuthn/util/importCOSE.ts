@@ -1,4 +1,4 @@
-import { decodeFirstSync } from 'cbor';
+import { decodeFirst } from 'cbor';
 import { subtle, webcrypto } from 'crypto';
 
 enum COSEKeys {
@@ -20,21 +20,30 @@ const COSECrv: { [key: number]: string } = {
   // alg: -8
   6: 'ed25519',
 }
+// noinspection SpellCheckingInspection
+const COSERSAParam: { [key: number]: { name: string, hash: string } } = {
+  '-3': { name: 'RSA-PSS', hash: '256' },
+  '39': { name: 'RSA-PSS', hash: '512' },
+  '-38': { name: 'RSA-PSS', hash: '384' },
+  '-65535': { name: 'RSASSA-PKCS1-v1_5', hash: '1' },
+  '-257': { name: 'RSASSA-PKCS1-v1_5', hash: '256' },
+  '-258': { name: 'RSASSA-PKCS1-v1_5', hash: '384' },
+  '-259': { name: 'RSASSA-PKCS1-v1_5', hash: '512' }
+}
 enum COSEKty {
   OKP = 1,
   EC2 = 2,
   RSA = 3
 }
 
-const jwkToPEM = async (keyData: webcrypto.JsonWebKey): Promise<string> => {
+const jwkToPEM = async (
+  keyData: webcrypto.JsonWebKey,
+  importParams: RsaHashedImportParams | EcKeyImportParams): Promise<string> => {
   // First, import the key with WebCrypto in nodeJS in JWK format
   const key = await subtle.importKey(
     'jwk',
     keyData,
-    {
-      name: 'ECDSA',
-      namedCurve: 'P-256'
-    },
+    importParams,
     true,
     ['verify']
   )
@@ -46,17 +55,17 @@ const jwkToPEM = async (keyData: webcrypto.JsonWebKey): Promise<string> => {
     + '\n-----END PUBLIC KEY-----'
 }
 
-const COSEPublicToPEM = async (k: Buffer): Promise<string> => {
+const importCOSE = async (k: Buffer): Promise<string> => {
   let decodedCOSE;
   try {
-    decodedCOSE = decodeFirstSync(k);
+    decodedCOSE = await decodeFirst(k);
   } catch (err) {
-    throw new Error(`Error decoding public key while converting to PEM: ${(err as Error).message}`);
+    throw new Error(`Error decoding public key while converting to PEM: ${(err as Error).message}`)
   }
 
-  const kty = decodedCOSE.get(COSEKeys.kty);
+  const kty = decodedCOSE.get(COSEKeys.kty)
 
-  if (!kty) throw new Error('Public key missing kty');
+  if (!kty) throw new Error('Public key missing kty')
 
   if (kty === COSEKty.EC2) { // EC2 key
     const
@@ -64,34 +73,42 @@ const COSEPublicToPEM = async (k: Buffer): Promise<string> => {
       x = decodedCOSE.get(COSEKeys.x),
       y = decodedCOSE.get(COSEKeys.y)
 
-    if (!crv) throw new Error('EC2 public key missing crv');
-    if (!x || !(x instanceof Buffer)) throw new Error('EC2 public key missing x or invalid format');
-    if (!y || !(y instanceof Buffer)) throw new Error('EC2 public key missing y or invalid format');
+    if (!crv || typeof crv !== 'number') throw new Error('EC2 public key is missing or has invalid crv')
+    if (!x || !(x instanceof Buffer)) throw new Error('EC2 public key is missing or has invalid x')
+    if (!y || !(y instanceof Buffer)) throw new Error('EC2 public key is missing or has invalid y')
+
+    if (!(crv in COSECrv)) throw new Error(`Unexpected EC curve ${crv}`)
 
     return await jwkToPEM({
       kty: 'EC',
       crv: COSECrv[crv],
       x: x.toString('base64'),
       y: y.toString('base64')
+    }, {
+      name: 'ECDSA',
+      namedCurve: COSECrv[crv]
     })
   } else if (kty === COSEKty.RSA) {
-    const n = decodedCOSE.get(COSEKeys.n);
-    const e = decodedCOSE.get(COSEKeys.e);
+    const
+      n = decodedCOSE.get(COSEKeys.n),
+      e = decodedCOSE.get(COSEKeys.e),
+      alg = decodedCOSE.get(COSEKeys.alg)
 
-    if (!n || !(n instanceof Buffer)) throw new Error('RSA public key missing n or invalid format');
-    if (!e || !(e instanceof Buffer)) throw new Error('RSA public key missing e or invalid format');
+    if (!n || !(n instanceof Buffer)) throw new Error('RSA public key is missing or has invalid n')
+    if (!e || !(e instanceof Buffer)) throw new Error('RSA public key is missing or has invalid e')
+    if (!alg || typeof alg !== 'number') throw new Error('RSA public key is missing or has invalid alg')
+
+    if (!(alg in COSERSAParam)) throw new Error(`Unexpected RSA algorithm ${alg}`)
 
     return await jwkToPEM({
       kty: 'RSA',
       n: n.toString('base64'),
       e: e.toString('base64')
-    })
+    }, COSERSAParam[alg])
+  } else if (kty === COSEKty.OKP) {
+    // TODO: Implement Ed25519 importing
   }
-  throw new Error(`Unsupported public key type ${kty}`);
-}
-
-const importCOSE = async (k: Buffer): Promise<string> => {
-  return COSEPublicToPEM(k)
+  throw new Error(`Unsupported public key type ${kty}`)
 }
 
 export default importCOSE
