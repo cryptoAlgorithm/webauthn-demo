@@ -10,7 +10,6 @@ type Data = {
 }
 
 const schema = z.object({
-  credID: z.string(),
   clientData: z.string(),
   attestation: z.string(),
   nonce: z.string()

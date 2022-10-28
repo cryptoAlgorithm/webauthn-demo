@@ -109,7 +109,6 @@ const Auth: NextPage = () => {
         { clientDataJSON, attestationObject } = response as AuthenticatorAttestationResponse
       // Send attestation and client data JSON back to server
       const regResp = await sendPost('/api/auth/register', {
-        credID: cred.id,
         clientData: arrayBufferToB64(clientDataJSON),
         attestation: arrayBufferToB64(attestationObject),
         nonce: nonce
