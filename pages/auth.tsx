@@ -17,8 +17,9 @@ import {
 import { FormEvent, useCallback, useEffect, useState } from 'react';
 import Toolbar from '../components/Toolbar';
 import CloseRounded from '../icons/CloseRounded';
-import sendPost from '../utils/sendPost';
+import sendPost from '../utils/req/sendPost';
 import arrayBufferToB64 from '../utils/arrayBufferToB64';
+import sendDelete from '../utils/req/sendDelete';
 
 enum AuthMode {
   Auth, Register
@@ -70,6 +71,12 @@ const Auth: NextPage = () => {
     if (window && !window.PublicKeyCredential) setWebAuthnSupport(false);
   }, []);
 
+  const handleFlowCancel = useCallback((msg: string, nonce: string) => {
+    setError(msg)
+    setLoading(false)
+    sendDelete('/api/auth/signUp', { nonce: nonce }).then() // Ignore result
+  }, [])
+
   const handleSubmit = useCallback(async (evt: FormEvent<HTMLFormElement>) => {
     evt.preventDefault()
     setLoading(true)
@@ -89,12 +96,11 @@ const Auth: NextPage = () => {
         // Unsafe casting - Types for navigator.credential are broken
         cred = await webAuthnRegister(id, email, name, challenge) as PublicKeyCredential
       } catch (ex: any) {
-        setError('WebAuthn exception: ' + ex.message)
-        setLoading(false)
+        handleFlowCancel('WebAuthn exception: ' + ex.message, nonce)
         return
       }
       if (!cred) {
-        console.log('no credential!')
+        handleFlowCancel('No credentials returned from WebAuthn create request', nonce)
         return;
       }
 
@@ -114,7 +120,7 @@ const Auth: NextPage = () => {
       console.log('Authentication is not implemented yet')
     }
     setLoading(false)
-  }, [mode, email, name]);
+  }, [mode, email, name, handleFlowCancel]);
 
   return <Box display={'flex'} alignItems={'center'} justifyContent={'center'} minHeight={'100vh'}>
     <Toolbar />
