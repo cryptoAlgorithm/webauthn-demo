@@ -7,7 +7,7 @@ export default function Document() {
       <Head>
         <meta name={'description'} content={'Simple CTAP WebAuthn demo'} />
         <meta name={'keywords'} content={'webauthn, demo, ctab'} />
-        <link rel="icon" href="/favicon.ico" />
+        <link rel="icon" href="/favicon.png" />
       </Head>
       <body>
         {getInitColorSchemeScript({ defaultMode: 'dark' })}

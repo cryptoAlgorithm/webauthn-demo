@@ -5,6 +5,7 @@ import '@fontsource/plus-jakarta-sans/800.css'
 import type { AppProps } from 'next/app'
 import { CssVarsProvider } from '@mui/joy/styles';
 import { CssBaseline, extendTheme } from '@mui/joy';
+import RoutingLoader from '../components/RoutingLoader';
 
 const theme = extendTheme({
   fontFamily: {
@@ -21,9 +22,9 @@ function App({ Component, pageProps }: AppProps) {
     theme={theme}
     colorSchemeStorageKey={'theme'}
     modeStorageKey={'theme'}
-    defaultColorScheme={'dark'}
     defaultMode={'dark'}>
     <CssBaseline />
+    <RoutingLoader />
     <Component {...pageProps} />
   </CssVarsProvider>
 }

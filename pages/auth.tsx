@@ -1,27 +1,137 @@
 import { NextPage } from 'next';
-import { Box, Button, Card, Divider, Modal, Sheet, Tab, TabList, Tabs, TextField, Typography } from '@mui/joy';
-import { useEffect, useState } from 'react';
-import Toolbar from '../component/Toolbar';
+import {
+  Alert,
+  Box,
+  Button,
+  Card,
+  CircularProgress,
+  Divider, IconButton,
+  Modal,
+  Sheet,
+  Tab,
+  TabList,
+  Tabs,
+  TextField,
+  Typography
+} from '@mui/joy';
+import { FormEvent, useCallback, useEffect, useState } from 'react';
+import Toolbar from '../components/Toolbar';
+import CloseRounded from '../icons/CloseRounded';
+import sendPost from '../utils/sendPost';
+import arrayBufferToB64 from '../utils/ArrayBufferToB64';
 
 enum AuthMode {
   Auth, Register
 }
 
+const webAuthnRegister = async (
+  id: string,
+  email: string,
+  name: string,
+  challenge: string
+): Promise<Credential | null> => navigator.credentials.create({
+  publicKey: {
+    // Relying Party (a.k.a. - Service):
+    rp: {
+      name: "CTAP Demo",
+      id: location.hostname === 'localhost' ? 'localhost' : 'webauth.vercel.app'
+    },
+
+    // User:
+    user: {
+      id: new TextEncoder().encode(id),
+      name: email,
+      displayName: name
+    },
+
+    pubKeyCredParams: [{
+      type: 'public-key',
+      alg: -7 // EC256
+    }],
+
+    attestation: 'direct',
+
+    timeout: 5*60*1000,
+
+    challenge: new TextEncoder().encode(challenge)
+  }
+})
+
 const Auth: NextPage = () => {
   const [mode, setMode] = useState(AuthMode.Auth),
-    [webAuthnSupport, setWebAuthnSupport] = useState(true);
+    [webAuthnSupport, setWebAuthnSupport] = useState(true),
+    [email, setEmail] = useState(''),
+    [name, setName] = useState(''),
+    [loading, setLoading] = useState(false),
+    [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
     // Check for WebAuthn support if we are running in a browser (not SSR)
     if (window && !window.PublicKeyCredential) setWebAuthnSupport(false);
   }, []);
 
+  const handleSubmit = useCallback(async (evt: FormEvent<HTMLFormElement>) => {
+    evt.preventDefault()
+    setLoading(true)
+    setError(null)
+
+    if (mode === AuthMode.Register) {
+      const resp = await sendPost('/api/auth/signUp', { email: email, name: name })
+      if (!resp.ok) {
+        setLoading(false)
+        return
+      }
+      const { challenge, nonce, id } = await resp.json()
+
+      // Try WebAuthn registration
+      let cred: PublicKeyCredential | null
+      try {
+        // Unsafe casting - Types for navigator.credential are broken
+        cred = await webAuthnRegister(id, email, name, challenge) as PublicKeyCredential
+      } catch (ex: any) {
+        setError('WebAuthn exception: ' + ex.message)
+        setLoading(false)
+        return
+      }
+      if (!cred) {
+        console.log('no credential!')
+        return;
+      }
+
+      const
+        { response } = cred,
+        { clientDataJSON, attestationObject } = response as AuthenticatorAttestationResponse
+      // Send attestation and client data JSON back to server
+      const regResp = await sendPost('/api/auth/register', {
+        credID: cred.id,
+        clientData: arrayBufferToB64(clientDataJSON),
+        attestation: arrayBufferToB64(attestationObject),
+        nonce: nonce
+      })
+      if (regResp.ok) console.log('registration ok!')
+      else setError('Server attestation verification failed')
+    } else {
+      console.log('Authentication is not implemented yet')
+    }
+    setLoading(false)
+  }, [mode, email, name]);
+
   return <Box display={'flex'} alignItems={'center'} justifyContent={'center'} minHeight={'100vh'}>
     <Toolbar />
 
-    <Card variant={'outlined'} sx={{minWidth: 400, gap: 1, boxShadow: 'md'}}>
+    <Card variant={'outlined'} sx={{width: 400, gap: 1, boxShadow: 'md', m: 2}}>
       <Typography level={'h2'}>Welcome!</Typography>
       <Typography>Sign in or create an account</Typography>
+      { error &&
+          <Alert color={'danger'} sx={{mb: 1}}
+                 endDecorator={
+                   <IconButton variant={'plain'} size={'sm'} color={'neutral'}
+                               onClick={() => setError(null)}>
+                     <CloseRounded />
+                   </IconButton>
+                 }>
+        {error}
+      </Alert> }
 
       <Divider />
 
@@ -33,15 +143,24 @@ const Auth: NextPage = () => {
         </TabList>
       </Tabs>
 
-      <TextField label={'Email'}
-                 placeholder={mode == AuthMode.Register
-                   ? 'your-new-email@invalid.com'
-                   : 'registered-email@invalid.com'}
-                 endDecorator={<Button>Continue</Button>} type={'email'} />
+      <form onSubmit={handleSubmit}>
+        { mode === AuthMode.Register &&
+            <TextField label={'Your Name'} type={'text'} required name={'name'} placeholder={'John Doe'}
+                       value={name} onChange={evt => setName(evt.currentTarget.value)} sx={{pb: 1}} />
+        }
+        <TextField label={'Email'} type={'email'} required name={'email'}
+                   placeholder={mode == AuthMode.Register
+                     ? 'your-new-email@invalid.com'
+                     : 'registered-email@invalid.com'}
+                   value={email} onChange={evt => setEmail(evt.currentTarget.value)}
+                   endDecorator={<Button type={'submit'}
+                                         loading={loading} loadingIndicator={<CircularProgress size={'sm'} />}
+                   >Continue</Button>} />
+      </form>
 
       <Typography level={'body3'} mb={-.5}>
         Next: {mode == AuthMode.Register
-          ? 'Populate your user info'
+          ? 'Register your authenticator'
           : 'Verify your identity with your authenticator'}
       </Typography>
     </Card>
