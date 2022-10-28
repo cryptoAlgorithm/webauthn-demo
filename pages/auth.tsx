@@ -18,7 +18,7 @@ import { FormEvent, useCallback, useEffect, useState } from 'react';
 import Toolbar from '../components/Toolbar';
 import CloseRounded from '../icons/CloseRounded';
 import sendPost from '../utils/sendPost';
-import arrayBufferToB64 from '../utils/ArrayBufferToB64';
+import arrayBufferToB64 from '../utils/arrayBufferToB64';
 
 enum AuthMode {
   Auth, Register
