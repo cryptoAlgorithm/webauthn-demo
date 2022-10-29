@@ -2,7 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next'
 import firebaseNode from '../../../firebase/firebaseNode';
 import { ErrorResponse } from '../ErrorResponse';
 import { z } from 'zod';
-import { SignUpSession, typeConverter } from '../DBTypes';
+import { SignUpSession, typeConverter, User } from '../DBTypes';
 import validateRegistration from '../../../webAuthn/validateRegistration';
 
 type Data = {
@@ -38,7 +38,7 @@ export default async function handler(
     res.status(403).json({ error: 'Invalid signup session nonce' })
     return
   }
-  const { tempID, challenge, name, expires } = signUpSession.data()!
+  const { tempID, challenge, name, email, expires } = signUpSession.data()!
   // Delete temp session from db
   await signUpSession.ref.delete()
 
@@ -57,8 +57,17 @@ export default async function handler(
       ['http://localhost:3000', 'https://webauth.vercel.app'],
       ['localhost', 'webauth.vercel.app']
     )
-    console.log(regData)
-    // Store required registration data
+
+    // Store required registration data associated with the newly-created user
+    await db
+      .collection('users')
+      .withConverter(typeConverter<User>())
+      .doc(tempID)
+      .set({
+        email: email,
+        name: name,
+        credential: regData
+      })
 
     res.status(200).json({ success: true })
   } catch (ex: any) {

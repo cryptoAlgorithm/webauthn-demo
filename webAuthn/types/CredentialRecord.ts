@@ -9,7 +9,7 @@ export enum CredentialType {
  */
 export type CredentialRecord = {
   type: CredentialType
-  credentialID: string
+  credentialID: Buffer
   publicKeyBytes: Buffer
   signCount: number
   backupEligible: boolean

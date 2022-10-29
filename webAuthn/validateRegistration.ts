@@ -105,7 +105,7 @@ const validateRegistration = async (
 
   return {
     type: CredentialType.publicKey, // This is hardcoded as it's the only credential type that we support
-    credentialID: credentialID.toString('base64'),
+    credentialID: credentialID,
     publicKeyBytes: credentialPubKey,
     signCount: useCount,
     backupEligible: !!(flags & AuthenticatorDataFlags.backupEligible),

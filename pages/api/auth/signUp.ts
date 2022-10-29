@@ -92,6 +92,7 @@ export default async function handler(
     .set({
       challenge: challenge,
       name: name,
+      email: email,
       tempID: id,
       expires: firestore.Timestamp.fromMillis(+new Date() + WEBAUTHN_TIMEOUT)
     })
