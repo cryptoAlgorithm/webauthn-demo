@@ -1,5 +1,5 @@
 import importCOSE from './util/importCOSE';
-import * as crypto from 'crypto';
+import { verify } from 'crypto';
 
 const verifyAttStmt = async (
   format: string,
@@ -14,7 +14,7 @@ const verifyAttStmt = async (
       if (!sig) throw new Error('Sig is not present or of the wrong type')
 
       // Verify payload data with given public key
-      const isV = crypto.createVerify('sha256').update(verifyData).verify(await importCOSE(pubKey), sig)
+      const isV = verify('sha256', verifyData, await importCOSE(pubKey), sig)
       if (!isV) throw new Error('Could not verify authenticity of WebAuthn register payload with included key')
       break
     case 'none':

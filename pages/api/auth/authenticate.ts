@@ -54,17 +54,18 @@ const handler = async function handler(
     return
   }
 
-  // Step
+  // Steps 1 to 6b (i) are carried out by the client and are basically sanity checks
 
   // Validate registration parameters
   // Step 6b (ii) - Verify that the user account identified by response.userHandle
   // contains a credential record whose id equals credential.rawId
-  const userDoc = await db
+  const userDocRef = db
     .collection(DBCollections.users)
-    .withConverter(typeConverter<User>())
     .doc(userHandle)
+  const user = (await userDocRef
+    .withConverter(typeConverter<User>())
     .get()
-  const user = userDoc.data()
+  ).data()
   if (!user || !user.credential.credentialID.equals(Buffer.from(credID, 'base64'))) {
     res.status(404).json({ error: 'No user matches the given credential' })
     return
@@ -72,16 +73,24 @@ const handler = async function handler(
   const { credential } = user
 
   try {
-    await validateAuth(
+    // Steps 7 - 21
+    const { signCount, backupState } = await validateAuth(
       Buffer.from(clientData),
       Buffer.from(authData, 'base64'),
       Buffer.from(sig, 'base64'),
       user.credential.publicKeyBytes,
+      credential.signCount,
       challenge,
       ['http://localhost:3000', 'https://webauth.vercel.app'],
       ['localhost', 'webauth.vercel.app']
     )
     console.log(credential)
+
+    // Step 22 - Update credentialRecord with new state values
+    await userDocRef.update({
+      'credential.signCount': signCount,
+      'credential.backupState': backupState
+    })
 
     res.status(200).json({ bearer: 'no' })
   } catch (ex: any) {

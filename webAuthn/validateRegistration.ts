@@ -1,10 +1,10 @@
 import * as cbor from 'cbor'
 import parseAuthData from './parseAuthData';
-import { createHash } from 'crypto';
 import verifyAttStmt from './verifyAttStmt';
 import { CredentialRecord, CredentialType } from './types/CredentialRecord';
 import { AuthenticatorDataFlags } from './types/AuthenticatorData';
 import verifyRPIDHash from './util/verifyRPIDHash';
+import sha256Hash from './util/sha256Hash';
 
 type Attestation = {
   fmt: string
@@ -55,7 +55,7 @@ const validateRegistration = async (
     `Unexpected origin "${origin}, expected one of [${expectedOrigins.join(', ')}]`
   )
   // Step 10 - Compute a hash over response.clientDataJSON using SHA-256.
-  const clientDataHash = createHash('sha256').update(clientData).digest()
+  const clientDataHash = sha256Hash(clientData)
 
   // ====================================== //
   // ====== Validate attestation obj ====== //

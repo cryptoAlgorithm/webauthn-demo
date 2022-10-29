@@ -1,6 +1,9 @@
 import verifyRPIDHash from './util/verifyRPIDHash';
 import parseAuthData from './parseAuthData';
 import { AuthenticatorDataFlags } from './types/AuthenticatorData';
+import { verify } from 'crypto';
+import importCOSE from './util/importCOSE';
+import sha256Hash from './util/sha256Hash';
 
 type WebAuthnAuthResult = {
   signCount: number
@@ -16,6 +19,7 @@ type WebAuthnAuthResult = {
  * @param authData authData as received from the client
  * @param sig Signature of `clientData` and `authData` from WebAuthn auth call as received from the client
  * @param verifySigPubKey Public key to use for signature verification
+ * @param storedSignCount Signature counter stored on the server to verify against
  * @param expectedChallenge
  * @param expectedOrigins
  * @param expectedRPIDs
@@ -26,6 +30,7 @@ const validateAuth = async (
   authData: Buffer,
   sig: Buffer,
   verifySigPubKey: Buffer,
+  storedSignCount: number,
   expectedChallenge: string,
   expectedOrigins: string[],
   expectedRPIDs: string[],
@@ -54,16 +59,38 @@ const validateAuth = async (
   if (!verifyRPIDHash(rpIDHash, expectedRPIDs)) throw new Error(
     `Unexpected RP ID hash "${rpIDHash}", allowed RP IDs: [${expectedRPIDs.join(', ')}]`
   )
+
   // Step 14 - Verify that the UP bit of the flags in authData is set.
   if (!(flags & AuthenticatorDataFlags.userPresent)) throw new Error('UP flag bit not set')
+  // Step 15 - If the Relying Party requires user verification for this assertion,
+  // verify that the UV bit of the flags in authData is set.
   if (userVerificationRequired && !(flags & AuthenticatorDataFlags.userVerified)) throw new Error(
     'User verification required but UV flag not set'
   )
 
-  // TODO: Steps 15-20
+  // Step 16 - Ignored as we don't care about credential backup
+  // Step 17 - Ignored as extensions aren't in use
+
+  // Step 18 - Compute a hash over the cData using SHA-256.
+  const contentHash = sha256Hash(clientData)
+
+  // Step 19 - Using credentialRecord.publicKey, verify that sig is a valid signature
+  // over the binary concatenation of authData and hash.
+  if (!verify(
+    'sha256',
+    Buffer.concat([authData, contentHash]),
+    await importCOSE(verifySigPubKey),
+    sig
+  )) throw new Error('Signature verification failed')
+
+  // Step 20 - Verify signature counter
+  // Authenticator may be cloned, to be safe, fail auth ceremonies with an invalid sig counter
+  if ((useCount !== 0 || storedSignCount !== 0) && useCount <= storedSignCount) throw new Error(
+    `Invalid signature counter ${useCount}, expected > ${storedSignCount}`
+  )
 
   // Step 21 - Ignored as response.attestationObject doesn't seem to exist in any
-  // WebAuthn provider during testing
+  // WebAuthn provider during testing (and this step isn't strictly required in the spec)
 
   return {
     signCount: useCount,

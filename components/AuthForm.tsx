@@ -209,7 +209,7 @@ const AuthForm = () => {
       return
     }
 
-    await sendPost('/api/auth/authenticate', {
+    const authResp = await sendPost('/api/auth/authenticate', {
       clientData: new TextDecoder().decode(clientDataJSON),
       authData: arrayBufferToB64(authenticatorData),
       sig: arrayBufferToB64(signature),
@@ -218,6 +218,15 @@ const AuthForm = () => {
       extensions: clientExtensionResults,
       nonce: nonce
     })
+    if (!authResp.ok) {
+      // Check if we received an error payload from the server
+      if (authResp.headers.get('Content-Type')?.includes('application/json')) {
+        setError((await authResp.json())['error']) // Show the server error if so
+      } else {
+        setError('Server failed to verify WebAuthn authentication')
+      }
+    }
+
     setLoading(false)
   }, [handleFlowCancel])
 

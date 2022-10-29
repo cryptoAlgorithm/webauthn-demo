@@ -1,4 +1,4 @@
-import { createHash } from 'crypto';
+import sha256Hash from './sha256Hash';
 
 /**
  * Ascertains that the RP ID hash corresponds to one of the hashes of accepted RP IDs
@@ -6,7 +6,7 @@ import { createHash } from 'crypto';
  * @param acceptedRPIDs Accepted RP IDs (not their hashes!)
  */
 const verifyRPIDHash = (RPIDHash: string, acceptedRPIDs: string[]): boolean => acceptedRPIDs.some(rpID =>
-  RPIDHash === createHash('sha256').update(rpID).digest('base64')
+  RPIDHash === sha256Hash(Buffer.from(rpID)).toString('base64')
 )
 
 export default verifyRPIDHash
