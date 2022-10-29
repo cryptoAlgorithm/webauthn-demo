@@ -6,22 +6,31 @@ import { useEffect, useState } from 'react';
 
 const BrandingText = (props: { brand: string, isBeta?: boolean }) => {
   const { brand, isBeta = true } = props
-  return <Box position={'relative'}>
-    <Typography level={'h6'}>{ brand }</Typography>
+  const [mouseOver, setMouseOver] = useState(false)
+  return <Typography level={'h6'} position={'relative'} height={28}
+                onMouseEnter={() => setMouseOver(true)}
+                onMouseLeave={() => setMouseOver(false)}>
+    { brand }
     { isBeta &&
       <Chip size={'sm'} color={'warning'} variant={'soft'} sx={{
         position: 'absolute',
         right: 0,
         top: 0,
-        textTransform: 'uppercase',
-        transform: 'translateX(55%) translateY(-8%) rotate(30deg)',
         '--Chip-minHeight': 16,
-        '--Chip-paddingInline': '.4rem'
+        '--Chip-paddingInline': '.4rem',
+        textTransform: 'uppercase',
+        // Spaces at the end of the line doesn't play well with multiline backquoted strings,
+        // so we'll just concatenate several together here
+        transform: `translateX(${mouseOver ? 'calc(100% + .25rem)' : '55%'}) ` +
+          `translateY(${mouseOver ? '5px' : '-8%'}) ` +
+          `rotate(${mouseOver ? 0 : 30}deg)`,
+        transition: 'transform .2s ease-in-out'
       }}>
+        { /* Use textTransform to make this uppercase for better accessibility */ }
         Beta
       </Chip>
     }
-  </Box>
+  </Typography>
 }
 
 /**
@@ -45,7 +54,7 @@ const Toolbar = () => {
             flexDirection: 'row', alignItems: 'center', gap: 1.5
     }}>
       <Link href={'/'} style={{display: 'flex'}}>
-        <Image src={icon} alt={''} width={32} />
+        <Image src={icon} alt={'Home'} width={32} />
       </Link>
       <BrandingText brand={'WebAuthn'} />
 
