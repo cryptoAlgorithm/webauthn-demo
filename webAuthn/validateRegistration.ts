@@ -1,10 +1,10 @@
 import * as cbor from 'cbor'
 import parseAuthData from './parseAuthData';
-import verifyAttStmt from './verifyAttStmt';
 import { CredentialRecord, CredentialType } from './types/CredentialRecord';
 import { AuthenticatorDataFlags } from './types/AuthenticatorData';
 import verifyRPIDHash from './util/verifyRPIDHash';
 import sha256Hash from './util/sha256Hash';
+import verifyAttestationStmt from './verifyAttestationStmt';
 
 type Attestation = {
   fmt: string
@@ -94,7 +94,7 @@ const validateRegistration = async (
   )
 
   // Steps 17, 19 & 20 - Verify attestation statement
-  await verifyAttStmt(fmt, attStmt, Buffer.concat([authData, clientDataHash]), credentialPubKey)
+  await verifyAttestationStmt(fmt, attStmt, Buffer.concat([authData, clientDataHash]), credentialPubKey)
 
   // Step 23 - Verify that the credentialId is ≤ 1023 bytes
   if (credentialID.byteLength > 1023) throw new Error(

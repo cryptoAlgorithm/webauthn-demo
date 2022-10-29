@@ -1,6 +1,10 @@
 import { decodeFirst } from 'cbor';
 import { subtle, webcrypto } from 'crypto';
 
+/*
+Constants adapted from https://github.com/MasterKale/SimpleWebAuthn/
+ */
+
 enum COSEKeys {
   kty = 1,
   alg = 3,
@@ -30,6 +34,19 @@ const COSERSAParam: { [key: number]: { name: string, hash: string } } = {
   '-258': { name: 'RSASSA-PKCS1-v1_5', hash: '384' },
   '-259': { name: 'RSASSA-PKCS1-v1_5', hash: '512' }
 }
+export const COSEAlgHash: { [key: number]: number } = {
+  '-65535': 1,
+  '-259': 512,
+  '-258': 384,
+  '-257': 256,
+  '-39': 512,
+  '-38': 384,
+  '-37': 256,
+  '-36': 512,
+  '-35': 384,
+  '-8': 512,
+  '-7': 256
+};
 enum COSEKty {
   OKP = 1,
   EC2 = 2,
@@ -38,7 +55,8 @@ enum COSEKty {
 
 const jwkToPEM = async (
   keyData: webcrypto.JsonWebKey,
-  importParams: RsaHashedImportParams | EcKeyImportParams): Promise<string> => {
+  importParams: RsaHashedImportParams | EcKeyImportParams
+): Promise<string> => {
   // First, import the key with WebCrypto in nodeJS in JWK format
   const key = await subtle.importKey(
     'jwk',
