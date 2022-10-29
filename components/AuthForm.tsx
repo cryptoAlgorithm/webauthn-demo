@@ -1,4 +1,4 @@
-import { FormEvent, useCallback, useState } from 'react';
+import { FormEvent, useCallback, useEffect, useState } from 'react';
 import sendDelete from '../utils/req/sendDelete';
 import sendPost from '../utils/req/sendPost';
 import arrayBufferToB64 from '../utils/arrayBufferToB64';
@@ -74,7 +74,11 @@ const AuthForm = () => {
     [email, setEmail] = useState(''),
     [name, setName] = useState(''),
     [loading, setLoading] = useState(false),
+    [emailError, setEmailError] = useState<string | null>(null),
     [error, setError] = useState<string | null>(null)
+
+  // Clear the email text field error when the email input or mode changes
+  useEffect(() => setEmailError(null), [email, mode])
 
   const handleFlowCancel = useCallback((msg: string, nonce: string) => {
     setError(msg)
@@ -91,6 +95,8 @@ const AuthForm = () => {
       const resp = await sendPost('/api/auth/signUp', { email: email, name: name })
       if (!resp.ok) {
         setLoading(false)
+        if (resp.status === 403) setEmailError('Account already exists, try authenticating instead')
+        else setEmailError('Failed to initiate registration')
         return
       }
       // Get registration params from server, no validation done as server is trusted
@@ -139,15 +145,17 @@ const AuthForm = () => {
     <Typography level={'h2'}>Welcome!</Typography>
     <Typography>Sign in or create an account</Typography>
     { error &&
-        <Alert color={'danger'} sx={{mb: 1}}
-               endDecorator={
-                 <IconButton variant={'plain'} size={'sm'} color={'neutral'}
-                             onClick={() => setError(null)}>
-                   <CloseRounded />
-                 </IconButton>
-               }>
+        <Alert
+            color={'danger'} sx={{mb: 1}}
+            endDecorator={
+              <IconButton variant={'plain'} size={'sm'} color={'neutral'}
+                          onClick={() => setError(null)}>
+                <CloseRounded />
+              </IconButton>
+            }>
           {error}
-        </Alert> }
+        </Alert>
+    }
 
     <Divider />
 
@@ -161,17 +169,20 @@ const AuthForm = () => {
 
     <form onSubmit={handleSubmit}>
       { mode === AuthMode.Register &&
-          <TextField label={'Your Name'} type={'text'} required name={'name'} placeholder={'John Doe'}
+          <TextField label={'Your Name'} type={'text'} required placeholder={'John Doe'} disabled={loading}
                      value={name} onChange={evt => setName(evt.currentTarget.value)} sx={{pb: 1}} />
       }
-      <TextField label={'Email'} type={'email'} required name={'email'}
-                 placeholder={mode == AuthMode.Register
-                   ? 'your-new-email@invalid.com'
-                   : 'registered-email@invalid.com'}
-                 value={email} onChange={evt => setEmail(evt.currentTarget.value)}
-                 endDecorator={<Button type={'submit'}
-                                       loading={loading} loadingIndicator={<CircularProgress size={'sm'} />}
-                 >Continue</Button>} />
+      <TextField
+        label={'Email'} error={!!emailError} helperText={emailError} disabled={loading}
+        type={'email'} required
+        placeholder={mode == AuthMode.Register
+          ? 'your-new-email@invalid.com'
+          : 'registered-email@invalid.com'}
+        value={email} onChange={evt => setEmail(evt.currentTarget.value)}
+        endDecorator={
+          <Button type={'submit'}
+                  loading={loading} loadingIndicator={<CircularProgress size={'sm'} />}>Continue</Button>}
+      />
     </form>
 
     <Typography level={'body3'} mb={-.5}>
