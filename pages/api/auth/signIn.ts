@@ -1,28 +1,19 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
 import firebaseNode from '../../../firebase/firebaseNode';
 import { ErrorResponse } from '../ErrorResponse';
-import { z } from 'zod';
 import * as crypto from 'crypto';
-import { DBCollections, SignUpSession, typeConverter, User } from '../DBTypes';
+import { AuthCeremonyBookmark, DBCollections, typeConverter } from '../DBTypes';
 import { firestore } from 'firebase-admin';
+import { deleteTempSessionSchema } from './signUp';
 import routeCatchable from '../../../utils/routeCatchable';
 
 type Data = {
   challenge: string
   nonce: string
-  id: string
   timeout: number
 }
 
-const schema = z.object({
-  email: z.string(),
-  name: z.string()
-})
-export const deleteTempSessionSchema = z.object({
-  nonce: z.string()
-})
-
-const WEBAUTHN_TIMEOUT = 5*60*1000
+const WEBAUTHN_AUTH_TIMEOUT = 5*60*1000
 
 const allowedMethods = ['POST', 'DELETE']
 
@@ -33,7 +24,7 @@ const handler = async function handler(
   // Only allow POST or DELETE requests
   if (!req.method || !allowedMethods.includes(req.method)) {
     res.setHeader('Allow', allowedMethods)
-    res.status(405).end('Only POST requests are allowed')
+    res.status(405).end(`Allowed methods: ${allowedMethods.join(', ')}`)
     return
   }
 
@@ -48,7 +39,7 @@ const handler = async function handler(
     const { nonce } = deleteTempSessionSchema.parse(req.body)
     try {
       await db
-        .collection('signUpSessions')
+        .collection(DBCollections.authCeremonies)
         .doc(nonce)
         .delete({ exists: true })
     } catch (ex: any) {
@@ -61,48 +52,27 @@ const handler = async function handler(
     return
   }
 
-  // ========================================================================
-  // Handle POST requests - create a temp signup session at the start of the
-  // WebAuthn registration ceremony
-  // ========================================================================
-
-  // Validate body with Zod (throws on error)
-  const { email, name } = schema.parse(req.body);
-
-  // Check if user with the same email already exists in the db
-  const existingUsers = await db
-    .collection('users')
-    .withConverter(typeConverter<User>())
-    .where('email', '==', email)
-    .count()
-    .get()
-  if (existingUsers.data().count !== 0) {
-    res.status(403).json({ error: 'User already exists' })
-    return
-  }
+  // ==============================================================
+  // Handle POST requests - create a session for the auth ceremony
+  // ==============================================================
 
   const
     signupNonce = crypto.randomBytes(32).toString('hex'),
-    challenge = crypto.randomBytes(32).toString('hex'),
-    id = crypto.randomUUID()
-  // "Cache" signup session in database
+    challenge = crypto.randomBytes(32).toString('hex')
+  // Persist challenge to a session in db for future reference
   await db
-    .collection(DBCollections.signUpSessions)
-    .withConverter(typeConverter<SignUpSession>())
+    .collection(DBCollections.authCeremonies)
+    .withConverter(typeConverter<AuthCeremonyBookmark>())
     .doc(signupNonce)
     .set({
       challenge: challenge,
-      name: name,
-      email: email,
-      tempID: id,
-      expires: firestore.Timestamp.fromMillis(+new Date() + WEBAUTHN_TIMEOUT)
+      expires: firestore.Timestamp.fromMillis(+new Date() + WEBAUTHN_AUTH_TIMEOUT)
     })
 
   res.status(200).json({
     challenge: challenge,
     nonce: signupNonce,
-    id: id,
-    timeout: WEBAUTHN_TIMEOUT
+    timeout: WEBAUTHN_AUTH_TIMEOUT
   })
 }
 

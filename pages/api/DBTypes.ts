@@ -9,10 +9,21 @@ export type SignUpSession = {
   expires: firestore.Timestamp
 }
 
+export type AuthCeremonyBookmark = {
+  challenge: string
+  expires: firestore.Timestamp
+}
+
 export type User = {
   email: string
   name: string
   credential: CredentialRecord
+}
+
+export enum DBCollections {
+  users = 'users',
+  authCeremonies = 'authCeremonies',
+  signUpSessions = 'signUpSessions'
 }
 
 export const typeConverter = <T>() => ({

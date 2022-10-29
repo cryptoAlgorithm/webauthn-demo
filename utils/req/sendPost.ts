@@ -3,7 +3,7 @@
  */
 const sendPost = async (
   path: string,
-  body: any
+  body: any = {}
 ): Promise<Response> => fetch(path, {
   method: 'POST',
   headers: {

@@ -2,8 +2,9 @@ import type { NextApiRequest, NextApiResponse } from 'next'
 import firebaseNode from '../../../firebase/firebaseNode';
 import { ErrorResponse } from '../ErrorResponse';
 import { z } from 'zod';
-import { SignUpSession, typeConverter, User } from '../DBTypes';
+import { DBCollections, SignUpSession, typeConverter, User } from '../DBTypes';
 import validateRegistration from '../../../webAuthn/validateRegistration';
+import routeCatchable from '../../../utils/routeCatchable';
 
 type Data = {
   success: boolean
@@ -15,7 +16,7 @@ const schema = z.object({
   nonce: z.string()
 })
 
-export default async function handler(
+const handler = async function handler(
   req: NextApiRequest,
   res: NextApiResponse<Data | ErrorResponse>
 ) {
@@ -30,7 +31,7 @@ export default async function handler(
 
   const db = firebaseNode.firestore()
   const signUpSession = await db
-    .collection('signUpSessions')
+    .collection(DBCollections.signUpSessions)
     .withConverter(typeConverter<SignUpSession>())
     .doc(nonce)
     .get()
@@ -42,7 +43,7 @@ export default async function handler(
   // Delete temp session from db
   await signUpSession.ref.delete()
 
-  // Ensure the signup session hasn't expired
+  // Ensure the auth ceremony session hasn't expired
   if (expires.toDate() < new Date()) {
     res.status(401).json({ error: 'Signup session expired' })
     return
@@ -72,6 +73,8 @@ export default async function handler(
     res.status(200).json({ success: true })
   } catch (ex: any) {
     res.status(400).json({ error: 'Could not verify WebAuthn attestation' })
-    console.log(ex.message)
+    console.log('WebAuthn registration verification failure:', ex.message)
   }
 }
+
+export default routeCatchable(handler)

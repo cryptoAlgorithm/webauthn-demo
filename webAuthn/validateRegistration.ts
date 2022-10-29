@@ -4,6 +4,7 @@ import { createHash } from 'crypto';
 import verifyAttStmt from './verifyAttStmt';
 import { CredentialRecord, CredentialType } from './types/CredentialRecord';
 import { AuthenticatorDataFlags } from './types/AuthenticatorData';
+import verifyRPIDHash from './util/verifyRPIDHash';
 
 type Attestation = {
   fmt: string
@@ -80,10 +81,7 @@ const validateRegistration = async (
 
   // Step 12 - Verify that the rpIdHash in authData is the SHA-256 hash of the RP ID
   // expected by the Relying Party.
-  const rpIDValid = expectedRPIDs.some(rpID =>
-    rpIDHash === createHash('sha256').update(rpID).digest('base64')
-  )
-  if (!rpIDValid) throw new Error(
+  if (!verifyRPIDHash(rpIDHash, expectedRPIDs)) throw new Error(
     `Unexpected RP ID hash "${rpIDHash}", expected hashes of one of [${expectedRPIDs.join(', ')}]`
   )
 
