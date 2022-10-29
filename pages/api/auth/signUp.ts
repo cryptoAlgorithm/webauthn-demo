@@ -4,11 +4,13 @@ import { ErrorResponse } from '../ErrorResponse';
 import { z } from 'zod';
 import * as crypto from 'crypto';
 import { SignUpSession, typeConverter, User } from '../DBTypes';
+import { firestore } from 'firebase-admin';
 
 type Data = {
   challenge: string
   nonce: string
-  id: string
+  id: string,
+  timeout: number
 }
 
 const schema = z.object({
@@ -18,6 +20,8 @@ const schema = z.object({
 const deleteSchema = z.object({
   nonce: z.string()
 })
+
+const WEBAUTHN_TIMEOUT = 5*60*1000
 
 const allowedMethods = ['POST', 'DELETE']
 
@@ -88,12 +92,14 @@ export default async function handler(
     .set({
       challenge: challenge,
       name: name,
-      tempID: id
+      tempID: id,
+      expires: firestore.Timestamp.fromMillis(+new Date() + WEBAUTHN_TIMEOUT)
     })
 
   res.status(200).json({
     challenge: challenge,
     nonce: signupNonce,
-    id: id
+    id: id,
+    timeout: WEBAUTHN_TIMEOUT
   })
 }

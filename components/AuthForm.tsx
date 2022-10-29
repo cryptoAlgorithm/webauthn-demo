@@ -29,12 +29,14 @@ enum AuthMode {
  * @param id User ID
  * @param email User email
  * @param name User display name
+ * @param timeout Registration timeout
  * @param challenge Registration challenge from server
  */
 const webAuthnRegister = async (
   id: string,
   email: string,
   name: string,
+  timeout: number,
   challenge: string
 ): Promise<Credential | null> => navigator.credentials.create({
   publicKey: {
@@ -53,12 +55,15 @@ const webAuthnRegister = async (
 
     pubKeyCredParams: [{
       type: 'public-key',
-      alg: -7 // EC256
+      alg: -7 // ES256
+    }, {
+      type: 'public-key',
+      alg: -257 // RS256
     }],
 
     attestation: 'direct',
 
-    timeout: 5*60*1000,
+    timeout: timeout,
 
     challenge: new TextEncoder().encode(challenge)
   }
@@ -88,26 +93,22 @@ const AuthForm = () => {
         setLoading(false)
         return
       }
-      const { challenge, nonce, id } = await resp.json()
+      // Get registration params from server, no validation done as server is trusted
+      const { challenge, nonce, id, timeout } = await resp.json()
 
       // Try WebAuthn registration
       let cred: PublicKeyCredential | null
       try {
-        // Unsafe casting - Types for navigator.credential are broken
         // Steps 1 and 2 - Construct options, call navigator.credentials.create() and
         // pass options as the publicKey option
-        cred = await webAuthnRegister(id, email, name, challenge) as PublicKeyCredential
+        cred = await webAuthnRegister(id, email, name, timeout, challenge) as PublicKeyCredential
       } catch (ex: any) {
         handleFlowCancel('WebAuthn exception: ' + ex.message, nonce)
         return
       }
-      if (!cred) {
-        handleFlowCancel('No credentials returned from WebAuthn create request', nonce)
-        return
-      }
       // Step 3 - Let response be credential.response. If response is not an instance of
       // AuthenticatorAttestationResponse, abort the ceremony with a user-visible error
-      if (!(cred.response instanceof AuthenticatorResponse)) {
+      if (!cred || !(cred.response instanceof AuthenticatorResponse)) {
         handleFlowCancel('Did not receive a valid authenticator response', nonce)
         return
       }
@@ -115,8 +116,8 @@ const AuthForm = () => {
       // Step 4 - Let clientExtensionResults be the result of calling credential.getClientExtensionResults()
       const
         clientExtensionResults = cred.getClientExtensionResults(),
-        { response } = cred,
-        { clientDataJSON, attestationObject } = response as AuthenticatorAttestationResponse
+        response = cred.response as AuthenticatorAttestationResponse,
+        { clientDataJSON, attestationObject } = response
       // Step 5 - Run UTF-8 decode on the value of response.clientDataJSON
       const JSONText = new TextDecoder().decode(clientDataJSON)
       // Send attestation and client data JSON back to server

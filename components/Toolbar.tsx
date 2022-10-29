@@ -1,13 +1,34 @@
-import { Box, Button, Card, Typography, useColorScheme } from '@mui/joy'
+import { Box, Button, Card, Chip, Typography, useColorScheme } from '@mui/joy'
 import Image from 'next/image'
 import icon from '../public/favicon.png'
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
+const BrandingText = (props: { brand: string, isBeta?: boolean }) => {
+  const { brand, isBeta = true } = props
+  return <Box position={'relative'}>
+    <Typography level={'h6'}>{ brand }</Typography>
+    { isBeta &&
+      <Chip size={'sm'} color={'warning'} variant={'soft'} sx={{
+        position: 'absolute',
+        right: 0,
+        top: 0,
+        textTransform: 'uppercase',
+        transform: 'translateX(55%) translateY(-8%) rotate(30deg)',
+        '--Chip-minHeight': 16,
+        '--Chip-paddingInline': '.4rem'
+      }}>
+        Beta
+      </Chip>
+    }
+  </Box>
+}
+
 /**
  * Toolbar component
- * Unfortunately doesn't exist as a prebuilt component yet
- * @constructor
+ *
+ * Unfortunately doesn't exist as a prebuilt component yet, so this
+ * component builds a bare-bones one from scratch.
  */
 const Toolbar = () => {
   const { mode, setMode } = useColorScheme();
@@ -26,7 +47,8 @@ const Toolbar = () => {
       <Link href={'/'} style={{display: 'flex'}}>
         <Image src={icon} alt={''} width={32} />
       </Link>
-      <Typography level={'h6'}>CTAP WebAuthn</Typography>
+      <BrandingText brand={'WebAuthn'} />
+
       <Box flexGrow={1} />
       { mounted && <Button
           size={'sm'} variant={'soft'} onClick={() => setMode(mode == 'light' ? 'dark' : 'light')}>

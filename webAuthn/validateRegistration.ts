@@ -1,18 +1,14 @@
 import * as cbor from 'cbor'
-import parseAuthData, { AuthenticatorDataFlags } from './parseAuthData';
+import parseAuthData from './parseAuthData';
 import { createHash } from 'crypto';
 import verifyAttStmt from './verifyAttStmt';
+import { CredentialRecord, CredentialType } from './types/CredentialRecord';
+import { AuthenticatorDataFlags } from './types/AuthenticatorData';
 
 type Attestation = {
   fmt: string
   attStmt: Map<string, string>
   authData: Buffer
-}
-
-type CredentialRecord = {
-  credentialID: string
-  publicKeyBytes: Buffer,
-  signCount: number
 }
 
 /**
@@ -75,8 +71,7 @@ const validateRegistration = async (
   if (!fmt || !attStmt || !authData) throw new Error('Missing expected fields in attestation object')
 
   // ====== Validate auth data ====== //
-  const
-    { attestedCredentialData, rpIDHash, flags, useCount } = await parseAuthData(authData)
+  const { attestedCredentialData, rpIDHash, flags, useCount } = await parseAuthData(authData)
   if (!attestedCredentialData) throw new Error(
     'Attested credentials data unexpectedly missing from registration authentication data'
   );
@@ -109,9 +104,12 @@ const validateRegistration = async (
   )
 
   return {
+    type: CredentialType.publicKey, // This is hardcoded as it's the only credential type that we support
     credentialID: credentialID.toString('base64'),
     publicKeyBytes: credentialPubKey,
-    signCount: useCount
+    signCount: useCount,
+    backupEligible: !!(flags & AuthenticatorDataFlags.backupEligible),
+    backupState: !!(flags & AuthenticatorDataFlags.backupState)
   }
 }
 

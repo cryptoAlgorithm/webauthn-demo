@@ -34,23 +34,32 @@ export default async function handler(
     .withConverter(typeConverter<SignUpSession>())
     .doc(nonce)
     .get()
-  if (!signUpSession.exists || !signUpSession.data()) {
+  if (!signUpSession.data()) {
     res.status(403).json({ error: 'Invalid signup session nonce' })
     return
   }
+  const { tempID, challenge, name, expires } = signUpSession.data()!
   // Delete temp session from db
   await signUpSession.ref.delete()
+
+  // Ensure the signup session hasn't expired
+  if (expires.toDate() < new Date()) {
+    res.status(401).json({ error: 'Signup session expired' })
+    return
+  }
 
   // Validate registration parameters
   try {
     const regData = await validateRegistration(
       Buffer.from(clientData),
       attestation,
-      signUpSession.data()!.challenge,
+      challenge,
       ['http://localhost:3000', 'https://webauth.vercel.app'],
       ['localhost', 'webauth.vercel.app']
     )
     console.log(regData)
+    // Store required registration data
+
     res.status(200).json({ success: true })
   } catch (ex: any) {
     res.status(400).json({ error: 'Could not verify WebAuthn attestation' })
