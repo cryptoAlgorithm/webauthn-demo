@@ -25,11 +25,17 @@ type AuthenticatorData = {
  */
 type AttestedCredentialData = {
   authenticatorGuid: Buffer
-  credentialID: string
+  credentialID: Buffer
   credentialPubKey: Buffer
 }
 
-enum AuthenticatorDataFlags {
+/**
+ * Possible flags provided by the authenticator
+ *
+ * Flags are a one-byte bitfield, bit positions can be referenced
+ * [here](https://www.w3.org/TR/webauthn-2/#flags)
+ */
+export enum AuthenticatorDataFlags {
   none,
   userPresent = 1 << 0,
   userVerified = 1 << 2,
@@ -62,33 +68,21 @@ const parseAuthData = async (bytes: Buffer): Promise<AuthenticatorData> => {
 
   const rpIdHash = bytes.subarray(pt, (pt += 32)).toString('base64');
 
-  const flagsInt = bytes.subarray(pt, (pt += 1))[0];
-
-  // Bit positions can be referenced here:
-  // https://www.w3.org/TR/webauthn-2/#flags
-  const flags = {
-    up: !!(flagsInt & (1 << 0)), // User Presence
-    uv: !!(flagsInt & (1 << 2)), // User Verified
-    be: !!(flagsInt & (1 << 3)), // Backup Eligibility
-    bs: !!(flagsInt & (1 << 4)), // Backup State
-    at: !!(flagsInt & (1 << 6)), // Attested Credential Data Present
-    ed: !!(flagsInt & (1 << 7)), // Extension Data Present
-    flagsInt,
-  };
+  const flags = bytes.subarray(pt, (pt += 1))[0];
 
   const counter = bytes.subarray(pt, (pt += 4)).readUInt32BE();
 
   let authData: AuthenticatorData = {
     rpIDHash: rpIdHash,
-    flags: flagsInt,
+    flags: flags,
     useCount: counter
   }
 
-  if (flags.at) {
+  if (flags & AuthenticatorDataFlags.attestedCredIncluded) {
     const aGuid = bytes.subarray(pt, (pt += 16));
 
     const credIDLen = bytes.subarray(pt, (pt += 2)).readUInt16BE();
-    const credentialID = bytes.subarray(pt, (pt += credIDLen)).toString('base64');
+    const credentialID = bytes.subarray(pt, (pt += credIDLen));
 
     // Credential public key encoded in CBOR!
     // Decode the next CBOR item in the buffer, then re-encode it back to a Buffer to find the length of the CBOR-encoded public key
@@ -104,7 +98,7 @@ const parseAuthData = async (bytes: Buffer): Promise<AuthenticatorData> => {
   }
 
   // Extensions: to be implemented if and when extensions are useful
-  if (flags.ed) {
+  if (flags & AuthenticatorDataFlags.extensionDataIncluded) {
     const firstDecoded = decodeFirst(bytes.subarray(pt));
     const firstEncoded = Buffer.from(encode(firstDecoded) as ArrayBuffer);
    // extensionsData = decodeAuthenticatorExtensions(extensionsDataBuffer);

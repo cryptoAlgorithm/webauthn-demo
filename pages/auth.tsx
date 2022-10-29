@@ -25,6 +25,16 @@ enum AuthMode {
   Auth, Register
 }
 
+/**
+ * Constructs a publicKey options object and calls navigator.credentials.create
+ * with those options
+ *
+ * Carries out steps 1 and 2 of https://w3c.github.io/webauthn/#sctn-registering-a-new-credential
+ * @param id User ID
+ * @param email User email
+ * @param name User display name
+ * @param challenge Registration challenge from server
+ */
 const webAuthnRegister = async (
   id: string,
   email: string,
@@ -34,7 +44,7 @@ const webAuthnRegister = async (
   publicKey: {
     // Relying Party (a.k.a. - Service):
     rp: {
-      name: "CTAP Demo",
+      name: 'WebAuthn Demo',
       id: location.hostname === 'localhost' ? 'localhost' : 'webauth.vercel.app'
     },
 
@@ -94,6 +104,8 @@ const Auth: NextPage = () => {
       let cred: PublicKeyCredential | null
       try {
         // Unsafe casting - Types for navigator.credential are broken
+        // Steps 1 and 2 - Construct options, call navigator.credentials.create() and
+        // pass options as the publicKey option
         cred = await webAuthnRegister(id, email, name, challenge) as PublicKeyCredential
       } catch (ex: any) {
         handleFlowCancel('WebAuthn exception: ' + ex.message, nonce)
@@ -101,16 +113,27 @@ const Auth: NextPage = () => {
       }
       if (!cred) {
         handleFlowCancel('No credentials returned from WebAuthn create request', nonce)
-        return;
+        return
+      }
+      // Step 3 - Let response be credential.response. If response is not an instance of
+      // AuthenticatorAttestationResponse, abort the ceremony with a user-visible error
+      if (!(cred.response instanceof AuthenticatorResponse)) {
+        handleFlowCancel('Did not receive a valid authenticator response', nonce)
+        return
       }
 
+      // Step 4 - Let clientExtensionResults be the result of calling credential.getClientExtensionResults()
       const
+        clientExtensionResults = cred.getClientExtensionResults(),
         { response } = cred,
         { clientDataJSON, attestationObject } = response as AuthenticatorAttestationResponse
+      // Step 5 - Run UTF-8 decode on the value of response.clientDataJSON
+      const JSONText = new TextDecoder().decode(clientDataJSON)
       // Send attestation and client data JSON back to server
       const regResp = await sendPost('/api/auth/register', {
-        clientData: arrayBufferToB64(clientDataJSON),
+        clientData: JSONText,
         attestation: arrayBufferToB64(attestationObject),
+        extensions: clientExtensionResults,
         nonce: nonce
       })
       if (regResp.ok) console.log('registration ok!')

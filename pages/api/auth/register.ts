@@ -44,7 +44,7 @@ export default async function handler(
   // Validate registration parameters
   try {
     const regData = await validateRegistration(
-      Buffer.from(clientData, 'base64'),
+      Buffer.from(clientData),
       attestation,
       signUpSession.data()!.challenge,
       ['http://localhost:3000', 'https://webauth.vercel.app'],
