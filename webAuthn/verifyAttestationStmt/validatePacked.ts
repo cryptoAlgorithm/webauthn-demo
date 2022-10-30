@@ -36,9 +36,6 @@ const validatePacked = async (
     if (new Date(cert.validFrom) > new Date()) throw new Error(`X.509 cert not valid before ${cert.validFrom}`)
     if (new Date(cert.validTo) < new Date()) throw new Error(`X.509 cert not valid after ${cert.validTo}`)
     // TODO: find out how to access and validate cert extensions
-    console.log(cert.raw)
-    console.log(cert.serialNumber)
-    console.log(cert.raw.toString())
 
     // Verify that sig is a valid signature
     const v = verify(hashAlg, verifyData, cert.toString(), sig)

@@ -6,6 +6,7 @@ const verifyAttestationStmt = async (
   verifyData: Buffer,
   pubKey: Buffer
 ) => {
+  // Step 19 - Determine the attestation statement format by performing a US ASCII case-sensitive match on fmt
   switch (format) {
     case 'packed':
       await validatePacked(attStmt, verifyData, pubKey)

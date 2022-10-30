@@ -1,4 +1,4 @@
-import { FormEvent, useCallback, useLayoutEffect, useState } from 'react'
+import { FormEvent, useCallback, useEffect, useLayoutEffect, useState } from 'react'
 import sendDelete from '../utils/req/sendDelete'
 import sendPost from '../utils/req/sendPost'
 import arrayBufferToB64 from '../utils/arrayBufferToB64'
@@ -16,6 +16,7 @@ import {
   Typography
 } from '@mui/joy'
 import CloseRounded from '../icons/CloseRounded'
+import { useRouter } from 'next/router';
 
 enum AuthMode {
   Auth, Register
@@ -88,6 +89,8 @@ const webAuthnAuth = async (
   }
 })
 
+const useLayoutEffectExceptSSR = typeof window === 'undefined' ? useEffect : useLayoutEffect
+
 const AuthForm = () => {
   const [mode, setMode] = useState(AuthMode.Auth),
     [email, setEmail] = useState(''),
@@ -96,11 +99,14 @@ const AuthForm = () => {
     [emailError, setEmailError] = useState<string | null>(null),
     [error, setError] = useState<string | null>(null)
 
+  const router = useRouter()
+
   // Clear errors when the email input or mode changes
-  useLayoutEffect(() => {
+  const clearErrors = useCallback(() => {
     setEmailError(null)
     setError(null)
-  }, [email, mode])
+  }, [])
+  useLayoutEffectExceptSSR(clearErrors, [email, mode])
 
   const handleFlowCancel = useCallback((msg: string, nonce: string, isSignUp: boolean = true) => {
     setError(msg)
@@ -114,7 +120,7 @@ const AuthForm = () => {
   const handleSignUp = useCallback(async (evt: FormEvent<HTMLFormElement>) => {
     evt.preventDefault()
     setLoading(true)
-    setError(null)
+    clearErrors()
 
     const resp = await sendPost('/api/auth/signUp', { email: email, name: name })
     if (!resp.ok) {
@@ -164,13 +170,14 @@ const AuthForm = () => {
       extensions: clientExtensionResults,
       nonce: nonce
     })
-    if (regResp.ok) console.log('registration ok!')
+    if (regResp.ok) await router.push('/me')
     else setError('Server registration verification failed')
     setLoading(false)
-  }, [email, name, handleFlowCancel]);
+  }, [email, name, handleFlowCancel, router, clearErrors]);
 
   const handleSignIn = useCallback(async () => {
     setLoading(true)
+    clearErrors()
 
     const initResp = await sendPost('/api/auth/signIn')
     if (!initResp.ok) setError('Failed to initiate auth ceremony with server')
@@ -225,10 +232,10 @@ const AuthForm = () => {
       } else {
         setError('Server failed to verify WebAuthn authentication')
       }
-    }
+    } else await router.push('/me')
 
     setLoading(false)
-  }, [handleFlowCancel])
+  }, [router, handleFlowCancel, clearErrors])
 
   return <Card variant={'outlined'} sx={{width: 400, gap: 1, boxShadow: 'md', m: 2}}>
     <Typography level={'h2'}>Welcome!</Typography>

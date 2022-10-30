@@ -5,9 +5,10 @@ import { z } from 'zod';
 import { AuthCeremonyBookmark, DBCollections, typeConverter, User } from '../DBTypes';
 import routeCatchable from '../../../utils/routeCatchable';
 import validateAuth from '../../../webAuthn/validateAuth';
+import authResponse from '../../../auth/authResponse';
 
-type Data = {
-  bearer: string
+export type AuthedData = {
+  renewIn: number
 }
 
 const schema = z.object({
@@ -21,7 +22,7 @@ const schema = z.object({
 
 const handler = async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<Data | ErrorResponse>
+  res: NextApiResponse<AuthedData | ErrorResponse>
 ) {
   // Only POSTs are allowed here!
   if (req.method !== 'POST') {
@@ -84,7 +85,6 @@ const handler = async function handler(
       ['http://localhost:3000', 'https://webauth.vercel.app'],
       ['localhost', 'webauth.vercel.app']
     )
-    console.log(credential)
 
     // Step 22 - Update credentialRecord with new state values
     await userDocRef.update({
@@ -92,7 +92,7 @@ const handler = async function handler(
       'credential.backupState': backupState
     })
 
-    res.status(200).json({ bearer: 'no' })
+    await authResponse(userHandle, res, !req.headers.host?.startsWith('localhost'))
   } catch (ex: any) {
     res.status(400).json({ error: 'Could not verify WebAuthn authentication' })
     console.log('WebAuthn auth verification failure:', ex.message)

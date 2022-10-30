@@ -5,10 +5,8 @@ import { z } from 'zod';
 import { DBCollections, SignUpSession, typeConverter, User } from '../DBTypes';
 import validateRegistration from '../../../webAuthn/validateRegistration';
 import routeCatchable from '../../../utils/routeCatchable';
-
-type Data = {
-  success: boolean
-}
+import { AuthedData } from './authenticate';
+import authResponse from '../../../auth/authResponse';
 
 const schema = z.object({
   clientData: z.string(),
@@ -18,7 +16,7 @@ const schema = z.object({
 
 const handler = async function handler(
   req: NextApiRequest,
-  res: NextApiResponse<Data | ErrorResponse>
+  res: NextApiResponse<AuthedData | ErrorResponse>
 ) {
   // Only POSTs are allowed here!
   if (req.method !== 'POST') {
@@ -70,7 +68,7 @@ const handler = async function handler(
         credential: regData
       })
 
-    res.status(200).json({ success: true })
+    await authResponse(tempID, res, !req.headers.host?.startsWith('localhost'))
   } catch (ex: any) {
     res.status(400).json({ error: 'Could not verify WebAuthn attestation' })
     console.log('WebAuthn registration verification failure:', ex.message)
