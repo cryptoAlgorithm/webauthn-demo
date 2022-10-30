@@ -122,7 +122,7 @@ const AuthForm = () => {
     setLoading(true)
     clearErrors()
 
-    const resp = await sendPost('/api/auth/signUp', { email: email, name: name })
+    const resp = await sendPost('/api/auth/signUp', { email: email.trim(), name: name.trim() })
     if (!resp.ok) {
       setLoading(false)
       if (resp.status === 403) setEmailError('Account already exists, try authenticating instead')
@@ -137,7 +137,7 @@ const AuthForm = () => {
     try {
       // Steps 1 and 2 - Construct options, call navigator.credentials.create() and
       // pass options as the publicKey option
-      cred = await webAuthnRegister(id, email, name, timeout, challenge) as PublicKeyCredential
+      cred = await webAuthnRegister(id, email.trim(), name.trim(), timeout, challenge) as PublicKeyCredential
     } catch (e) {
       const ex = e as Error
       handleFlowCancel(

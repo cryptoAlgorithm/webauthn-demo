@@ -63,8 +63,8 @@ const handler = async function handler(
       .withConverter(typeConverter<User>())
       .doc(tempID)
       .set({
-        email: email,
-        name: name,
+        email: email.trim(),
+        name: name.trim(),
         credential: regData
       })
 
