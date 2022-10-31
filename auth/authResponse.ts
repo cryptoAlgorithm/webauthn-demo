@@ -2,6 +2,9 @@ import { NextApiResponse } from 'next';
 import { ErrorResponse } from '../pages/api/ErrorResponse';
 import { AuthedData } from '../pages/api/auth/authenticate';
 import generateJWT from './generateJWT';
+import createLogger from '../utils/createLogger';
+
+const logger = createLogger('authResponse')
 
 export const JWT_VALIDITY = 10*60 // = 10min (Default number of seconds a JWT token is valid for)
 
@@ -21,6 +24,7 @@ const authResponse = async (
   cookieSecureOnly: boolean = false
 ) => {
   const jwt = await generateJWT(id, JWT_VALIDITY)
+  logger.trace('Generated JWT auth token for user %s', id)
   res.setHeader(
     'Set-Cookie',
     `token=${jwt}; Max-Age=${JWT_VALIDITY}; HttpOnly; Path=/;` + (cookieSecureOnly ? ' Secure;' : '')

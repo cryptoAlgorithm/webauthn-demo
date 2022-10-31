@@ -6,6 +6,9 @@ import { AuthCeremonyBookmark, DBCollections, typeConverter, User } from '../DBT
 import routeCatchable from '../../../utils/routeCatchable';
 import validateAuth from '../../../webAuthn/validateAuth';
 import authResponse from '../../../auth/authResponse';
+import createLogger from '../../../utils/createLogger';
+
+const logger = createLogger('authenticate')
 
 export type AuthedData = {
   renewIn: number
@@ -43,6 +46,7 @@ const handler = async function handler(
     .get()
   if (!authBookmark.data()) {
     res.status(403).json({ error: 'Invalid signup session nonce' })
+    logger.error({ nonce }, 'The bookmark corresponding to the auth ceremony nonce could not be found')
     return
   }
   const { challenge, expires } = authBookmark.data()!
@@ -52,6 +56,7 @@ const handler = async function handler(
   // Ensure the signup session hasn't expired
   if (expires.toDate() < new Date()) {
     res.status(401).json({ error: 'Signup session expired' })
+    logger.error({ nonce, expiredAt: expires }, 'An expired auth ceremony nonce was used')
     return
   }
 
@@ -69,11 +74,13 @@ const handler = async function handler(
   ).data()
   if (!user || !user.credential.credentialID.equals(Buffer.from(credID, 'base64'))) {
     res.status(404).json({ error: 'No user matches the given credential' })
+    logger.error({ userHandle }, 'Auth ceremony returned a non-existent user handle')
     return
   }
   const { credential } = user
 
   try {
+    logger.debug({ nonce, userID: userHandle }, 'Validating auth ceremony')
     // Steps 7 - 21
     const { signCount, backupState } = await validateAuth(
       Buffer.from(clientData),
@@ -85,17 +92,19 @@ const handler = async function handler(
       ['http://localhost:3000', 'https://webauth.vercel.app'],
       ['localhost', 'webauth.vercel.app']
     )
+    logger.debug({ nonce, userID: userHandle }, 'Successfully validated auth ceremony')
 
     // Step 22 - Update credentialRecord with new state values
     await userDocRef.update({
       'credential.signCount': signCount,
       'credential.backupState': backupState
     })
+    logger.trace({ signCount, backupState }, 'Updated credential record with new state values')
 
     await authResponse(userHandle, res, !req.headers.host?.startsWith('localhost'))
   } catch (ex: any) {
     res.status(400).json({ error: 'Could not verify WebAuthn authentication' })
-    console.log('WebAuthn auth verification failure:', ex.message)
+    logger.error({ nonce, exception: ex }, 'Failed to validate auth ceremony')
   }
 }
 
