@@ -1,5 +1,5 @@
 import { decodeFirst } from 'cbor';
-import { subtle, webcrypto } from 'crypto';
+import { webcrypto } from 'crypto';
 import createLogger from '../../utils/createLogger';
 
 const logger = createLogger('importCOSE')
@@ -61,7 +61,7 @@ const jwkToPEM = async (
   importParams: RsaHashedImportParams | EcKeyImportParams
 ): Promise<string> => {
   // First, import the key with WebCrypto in nodeJS in JWK format
-  const key = await subtle.importKey(
+  const key = await webcrypto.subtle.importKey(
     'jwk',
     keyData,
     importParams,
@@ -70,7 +70,7 @@ const jwkToPEM = async (
   )
 
   // Then export the imported key as a spki key and create an RSA key
-  const exp = await subtle.exportKey('spki', key)
+  const exp = await webcrypto.subtle.exportKey('spki', key)
   return '-----BEGIN PUBLIC KEY-----\n'
     + Buffer.from(exp).toString('base64')
     + '\n-----END PUBLIC KEY-----'
