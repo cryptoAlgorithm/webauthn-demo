@@ -1,10 +1,12 @@
 import { GetServerSideProps, NextPage } from 'next';
-import { Container, Typography } from '@mui/joy';
+import { Box, Button, Container, Divider, Typography } from '@mui/joy';
 import validateJWT from '../auth/validateJWT';
 import firebaseNode from '../firebase/firebaseNode';
 import { DBCollections, typeConverter, User } from './api/DBTypes';
 import { createHash } from 'crypto';
 import ProfileCard from '../components/ProfileCard';
+import Toolbar from '../components/Toolbar';
+import Link from 'next/link';
 
 export type ProfileProps = {
   id: string
@@ -17,10 +19,29 @@ export type ProfileProps = {
 const Me: NextPage<ProfileProps> = (
   { id, email, name, avatarURL, credentialID }
 ) => {
-  return <Container maxWidth={'md'}>
-    <Typography level={'display2'}>Hi {name}!</Typography>
-    <ProfileCard id={id} email={email} name={name} avatarURL={avatarURL} credentialID={credentialID} />
-  </Container>
+  return <>
+    <Toolbar position={'relative'} />
+    <Container maxWidth={'md'}>
+      <Typography level={'h1'} mt={3} gutterBottom>Hi {name}!</Typography>
+      <Box display={'flex'} gap={3}>
+        <Box flex={1} display={'flex'} flexDirection={'column'} gap={1.5}>
+          <Typography>
+            You&apos;re logged in with WebAuthn! Check out your profile
+            on the right, or explore the few options available below.
+          </Typography>
+          <Divider />
+        </Box>
+        <ProfileCard id={id} email={email} name={name} avatarURL={avatarURL} credentialID={credentialID}>
+          <Link href={'https://github.com/cryptoAlgorithm/webauthn-demo'} passHref legacyBehavior>
+            <Button variant={'soft'} size={'sm'} component={'a'}
+                    target={'_blank'} rel={'noopener noreferrer'}>
+              View source on GitHub
+            </Button>
+          </Link>
+        </ProfileCard>
+      </Box>
+    </Container>
+  </>
 }
 
 export default Me
