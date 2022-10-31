@@ -16,7 +16,7 @@ const ProfileCard = (
   { id, name, email, avatarURL, credentialID, children }: ProfileProps & { children?: ReactElement }
 ) => {
   return <Card
-    sx={{ width: 360, bgcolor: 'background.level1', position: 'relative', boxShadow: 'lg' }}
+    sx={{ width: 360, height: 'fit-content', bgcolor: 'background.level1', position: 'relative', boxShadow: 'lg' }}
     variant={'outlined'}
   >
     <CardOverflow sx={{

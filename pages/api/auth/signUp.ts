@@ -6,6 +6,7 @@ import * as crypto from 'crypto';
 import { DBCollections, SignUpSession, typeConverter, User } from '../DBTypes';
 import { firestore } from 'firebase-admin';
 import routeCatchable from '../../../utils/routeCatchable';
+import methodGuard from '../../../utils/req/methodGuard';
 
 type Data = {
   challenge: string
@@ -24,18 +25,12 @@ export const deleteTempSessionSchema = z.object({
 
 const WEBAUTHN_TIMEOUT = 5*60*1000
 
-const allowedMethods = ['POST', 'DELETE']
-
 const handler = async function handler(
   req: NextApiRequest,
   res: NextApiResponse<Data | ErrorResponse>
 ) {
   // Only allow POST or DELETE requests
-  if (!req.method || !allowedMethods.includes(req.method)) {
-    res.setHeader('Allow', allowedMethods)
-    res.status(405).end('Only POST requests are allowed')
-    return
-  }
+  if (methodGuard(['POST', 'DELETE'], req, res)) return
 
   // Get reference to Firestore
   const db = firebaseNode.firestore()

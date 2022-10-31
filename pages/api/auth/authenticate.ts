@@ -7,6 +7,7 @@ import routeCatchable from '../../../utils/routeCatchable';
 import validateAuth from '../../../webAuthn/validateAuth';
 import authResponse from '../../../auth/authResponse';
 import createLogger from '../../../utils/createLogger';
+import methodGuard from '../../../utils/req/methodGuard';
 
 const logger = createLogger('authenticate')
 
@@ -28,11 +29,7 @@ const handler = async function handler(
   res: NextApiResponse<AuthedData | ErrorResponse>
 ) {
   // Only POSTs are allowed here!
-  if (req.method !== 'POST') {
-    res.setHeader('Allow', ['POST'])
-    res.status(405).end('Only POST requests are allowed')
-    return
-  }
+  if (methodGuard(['POST'], req, res)) return
   // Validate body with Zod (throws on error)
   // Step 7 - Get response's clientDataJSON, authenticatorData, and signature
   // This is the only step not in order as there is no better place to put it

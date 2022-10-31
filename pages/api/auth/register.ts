@@ -7,6 +7,7 @@ import validateRegistration from '../../../webAuthn/validateRegistration';
 import routeCatchable from '../../../utils/routeCatchable';
 import { AuthedData } from './authenticate';
 import authResponse from '../../../auth/authResponse';
+import methodGuard from '../../../utils/req/methodGuard';
 
 const schema = z.object({
   clientData: z.string(),
@@ -19,11 +20,7 @@ const handler = async function handler(
   res: NextApiResponse<AuthedData | ErrorResponse>
 ) {
   // Only POSTs are allowed here!
-  if (req.method !== 'POST') {
-    res.setHeader('Allow', ['POST'])
-    res.status(405).end('Only POST requests are allowed')
-    return
-  }
+  if (methodGuard(['POST'], req, res)) return
   // Validate body with Zod (throws on error)
   const { clientData, attestation, nonce } = schema.parse(req.body);
 

@@ -6,6 +6,7 @@ import { AuthCeremonyBookmark, DBCollections, typeConverter } from '../DBTypes';
 import { firestore } from 'firebase-admin';
 import { deleteTempSessionSchema } from './signUp';
 import routeCatchable from '../../../utils/routeCatchable';
+import methodGuard from '../../../utils/req/methodGuard';
 
 type Data = {
   challenge: string
@@ -15,18 +16,12 @@ type Data = {
 
 const WEBAUTHN_AUTH_TIMEOUT = 5*60*1000
 
-const allowedMethods = ['POST', 'DELETE']
-
 const handler = async function handler(
   req: NextApiRequest,
   res: NextApiResponse<Data | ErrorResponse>
 ) {
   // Only allow POST or DELETE requests
-  if (!req.method || !allowedMethods.includes(req.method)) {
-    res.setHeader('Allow', allowedMethods)
-    res.status(405).end(`Allowed methods: ${allowedMethods.join(', ')}`)
-    return
-  }
+  if (methodGuard(['POST', 'DELETE'], req, res)) return // Like middleware but worse
 
   // Get reference to Firestore
   const db = firebaseNode.firestore()
