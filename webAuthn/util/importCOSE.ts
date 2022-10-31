@@ -1,5 +1,8 @@
 import { decodeFirst } from 'cbor';
 import { subtle, webcrypto } from 'crypto';
+import createLogger from '../../utils/createLogger';
+
+const logger = createLogger('importCOSE')
 
 /*
 Constants adapted from https://github.com/MasterKale/SimpleWebAuthn/
@@ -86,6 +89,7 @@ const importCOSE = async (k: Buffer): Promise<string> => {
   if (!kty) throw new Error('Public key missing kty')
 
   if (kty === COSEKty.EC2) { // EC2 key
+    logger.trace('Importing EC2 COSE key')
     const
       crv = decodedCOSE.get(COSEKeys.crv),
       x = decodedCOSE.get(COSEKeys.x),

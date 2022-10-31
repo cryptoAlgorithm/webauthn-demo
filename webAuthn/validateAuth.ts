@@ -91,10 +91,12 @@ const validateAuth = async (
 
   // Step 19 - Using credentialRecord.publicKey, verify that sig is a valid signature
   // over the binary concatenation of authData and hash.
+  const pem = await importCOSE(verifySigPubKey)
+  logger.trace({ pem: pem.substring(0, 50) }, 'Imported COSE as PEM')
   if (!verify(
     'sha256',
     Buffer.concat([authData, contentHash]),
-    await importCOSE(verifySigPubKey),
+    pem,
     sig
   )) throw new Error('Signature verification failed')
   logger.trace('Step 19 - Verified that sig is a valid signature over the concatenation of authData and hash')

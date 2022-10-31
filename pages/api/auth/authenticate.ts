@@ -103,8 +103,9 @@ const handler = async function handler(
 
     await authResponse(userHandle, res, !req.headers.host?.startsWith('localhost'))
   } catch (ex: any) {
+    const e = ex as Error
     res.status(400).json({ error: 'Could not verify WebAuthn authentication' })
-    logger.error({ nonce, exception: ex }, 'Failed to validate auth ceremony')
+    logger.error({ nonce, message: e.message, stack: e.stack }, 'Failed to validate auth ceremony')
   }
 }
 
