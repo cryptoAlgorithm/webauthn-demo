@@ -35,12 +35,15 @@ const Me: NextPage<ProfileProps> = (
       { /* The direction is reversed to allow proper flexbox wrapping */ }
       <Box display={'flex'} flexDirection={'row-reverse'} flexWrap={'wrap'} justifyContent={'center'} gap={3}>
         <ProfileCard id={id} email={email} name={name} avatarURL={avatarURL} credentialID={credentialID}>
-          <Link href={'https://github.com/cryptoAlgorithm/webauthn-demo'} passHref legacyBehavior>
-            <Button variant={'soft'} size={'sm'} component={'a'}
-                    target={'_blank'} rel={'noopener noreferrer'}>
-              View source on GitHub
-            </Button>
-          </Link>
+          <>
+            <Typography>Thanks for trying out WebAuthn here!</Typography>
+            <Link href={'https://github.com/cryptoAlgorithm/webauthn-demo'} passHref legacyBehavior>
+              <Button variant={'soft'} size={'sm'} component={'a'}
+                      target={'_blank'} rel={'noopener noreferrer'}>
+                View source on GitHub
+              </Button>
+            </Link>
+          </>
         </ProfileCard>
 
         <Box flex={1} display={'flex'} flexDirection={'column'} gap={1.5} minWidth={300}>
@@ -73,6 +76,15 @@ const Me: NextPage<ProfileProps> = (
               Delete Account
             </Button>
           </div>
+
+          <Divider />
+
+          <Typography level={'body2'}>
+            <i>
+              Do note that you&apos;ll be logged out 30 minutes after starting this session
+              since token refreshing isn&apos;t implemented.
+            </i>
+          </Typography>
         </Box>
       </Box>
     </Container>
