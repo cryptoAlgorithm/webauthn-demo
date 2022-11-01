@@ -8,6 +8,9 @@ import routeCatchable from '../../../utils/routeCatchable';
 import { AuthedData } from './authenticate';
 import authResponse from '../../../auth/authResponse';
 import methodGuard from '../../../utils/req/methodGuard';
+import createLogger from '../../../utils/createLogger';
+
+const logger = createLogger('register')
 
 const schema = z.object({
   clientData: z.string(),
@@ -54,6 +57,21 @@ const handler = async function handler(
       ['localhost', 'webauth.vercel.app']
     )
 
+    // Step 24 - Verify that the credentialId is not yet registered for any user.
+    const existingCredCounts = await db
+      .collection(DBCollections.authCeremonies)
+      .where('credential.credentialID', '==', regData.credentialID)
+      .count()
+      .get()
+    if (existingCredCounts.data().count !== 0) {
+      res.status(400).json({ error: 'Could not verify WebAuthn attestation' })
+      logger.error(
+        { credentialID: regData.credentialID, userID: tempID, email },
+        'Attempted to register duplicate credential ID',
+      )
+      return
+    }
+
     // Store required registration data associated with the newly-created user
     await db
       .collection('users')
@@ -67,8 +85,9 @@ const handler = async function handler(
 
     await authResponse(tempID, res, !req.headers.host?.startsWith('localhost'))
   } catch (ex: any) {
+    const e = ex as Error
     res.status(400).json({ error: 'Could not verify WebAuthn attestation' })
-    console.log('WebAuthn registration verification failure:', ex.message)
+    logger.error({ message: e.message, stack: e.stack }, 'Registration failure')
   }
 }
 

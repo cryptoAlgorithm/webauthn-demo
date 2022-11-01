@@ -16,7 +16,7 @@ type Data = {
 }
 
 const schema = z.object({
-  email: z.string(),
+  email: z.string().email(),
   name: z.string()
 })
 export const deleteTempSessionSchema = z.object({
@@ -63,12 +63,13 @@ const handler = async function handler(
 
   // Validate body with Zod (throws on error)
   const { email, name } = schema.parse(req.body);
+  const pureEmail = email.trim().toLowerCase()
 
   // Check if user with the same email already exists in the db
   const existingUsers = await db
     .collection('users')
     .withConverter(typeConverter<User>())
-    .where('email', '==', email)
+    .where('email', '==', pureEmail)
     .count()
     .get()
   if (existingUsers.data().count !== 0) {
@@ -88,7 +89,7 @@ const handler = async function handler(
     .set({
       challenge: challenge,
       name: name,
-      email: email,
+      email: pureEmail,
       tempID: id,
       expires: firestore.Timestamp.fromMillis(+new Date() + WEBAUTHN_TIMEOUT)
     })
