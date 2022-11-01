@@ -7,6 +7,8 @@ import EnhancedSecurity from '../icons/EnhancedSecurity';
 import ProfileCard from '../components/ProfileCard';
 import Image from 'next/image';
 import favicon from '../public/favicon.png'
+import RocketLaunch from '../icons/RocketLaunch';
+import NavigateNext from '../icons/NavigateNext';
 
 const Home: NextPage = () => {
   return <>
@@ -16,7 +18,13 @@ const Home: NextPage = () => {
 
     <Toolbar />
 
-    <Container maxWidth={'sm'} sx={{ textAlign: 'center', mt: '56px', py: 12 }}>
+    <Container
+      maxWidth={'sm'}
+      sx={{
+        textAlign: 'center', mt: '56px', py: 12,
+        minHeight: 'calc(100vh - 240px)',
+        display: 'flex', flexDirection: 'column', justifyContent: 'center'
+    }}>
       <Typography level={'h1'} mb={2}>Taking <span style={{ color: 'var(--joy-palette-primary-400)' }}>Web Authen</span>tication to the next level</Typography>
       <Typography mb={2}>
         WebAuthn is the future of web authentication: single-click sign on, strong security
@@ -24,7 +32,10 @@ const Home: NextPage = () => {
       </Typography>
       <Box gap={1.5} display={'flex'} flexWrap={'wrap'} justifyContent={'center'}>
         <Link href={'/auth'} passHref legacyBehavior>
-          <Button size={'lg'} component={'a'} sx={{ bgcolor: 'primary.500' }}>Give it a try!</Button>
+          <Button size={'lg'} component={'a'} sx={{ bgcolor: 'primary.500' }}
+                  endDecorator={<NavigateNext />}>
+            Give it a try!
+          </Button>
         </Link>
         <Link href={'https://github.com/cryptoAlgorithm/webauthn-demo'} passHref legacyBehavior>
           <Button size={'lg'} component={'a'} variant={'plain'}
@@ -64,7 +75,7 @@ const Home: NextPage = () => {
             to identify your users, so they need not remember which email they used to sign in anymore!
           </Typography>
           <Link href={'/auth'} passHref legacyBehavior>
-            <Button size={'lg'} component={'a'}>Take WebAuthn for a spin</Button>
+            <Button size={'lg'} component={'a'} startDecorator={<RocketLaunch />}>Take WebAuthn for a spin</Button>
           </Link>
         </Box>
       </Box>

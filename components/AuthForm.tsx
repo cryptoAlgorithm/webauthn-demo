@@ -257,14 +257,14 @@ const AuthForm = () => {
     <Tabs value={mode} onChange={(_, v) => setMode(v as AuthMode)}
           sx={{my: 1}}>
       <TabList variant={'plain'} sx={{p: 0}}>
-        <Tab variant={mode == AuthMode.Auth ? 'outlined' : 'plain'}>Authenticate</Tab>
-        <Tab variant={mode == AuthMode.Register ? 'outlined' : 'plain'}>Register</Tab>
+        <Tab variant={mode == AuthMode.Auth ? 'soft' : 'plain'}>Authenticate</Tab>
+        <Tab variant={mode == AuthMode.Register ? 'soft' : 'plain'}>Register</Tab>
       </TabList>
     </Tabs>
 
     { mode === AuthMode.Register &&
       <form onSubmit={handleSignUp}>
-        <TextField label={'Your Name'} type={'text'} required placeholder={'John Doe'} disabled={loading}
+        <TextField label={'Name'} type={'text'} required placeholder={'John Doe'} disabled={loading}
                    value={name} onChange={evt => setName(evt.currentTarget.value)} sx={{ pb: 1 }}/>
         <TextField
           label={'Email'} error={!!emailError} helperText={emailError} disabled={loading}
@@ -281,7 +281,8 @@ const AuthForm = () => {
     }
 
     { mode === AuthMode.Auth &&
-      <Button loading={loading} loadingIndicator={<CircularProgress size={'sm'} />} onClick={handleSignIn}>
+      <Button size={'lg'} onClick={handleSignIn}
+          loading={loading} loadingIndicator={<CircularProgress size={'sm'} />}>
         Sign In
       </Button>
     }
