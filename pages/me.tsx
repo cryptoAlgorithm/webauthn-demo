@@ -40,7 +40,7 @@ const Me: NextPage<ProfileProps> = (
             <Link href={'https://github.com/cryptoAlgorithm/webauthn-demo'} passHref legacyBehavior>
               <Button variant={'soft'} size={'sm'} component={'a'}
                       target={'_blank'} rel={'noopener noreferrer'}>
-                View source on GitHub
+                View source code on GitHub
               </Button>
             </Link>
           </>

@@ -1,8 +1,11 @@
-import { Box, Button, Chip, Typography, Sheet, useColorScheme } from '@mui/joy'
+import { Box, Chip, Typography, Sheet, IconButton, useColorScheme, Tooltip, Button } from '@mui/joy'
 import Image from 'next/image'
 import icon from '../public/favicon.png'
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import DarkMode from '../icons/DarkMode';
+import LightMode from '../icons/LightMode';
+import GitHubIcon from '../icons/GitHubIcon';
 
 const BrandingText = (props: { brand: string, isBeta?: boolean }) => {
   const { brand, isBeta = true } = props
@@ -34,7 +37,7 @@ const BrandingText = (props: { brand: string, isBeta?: boolean }) => {
 }
 
 type Props = {
-  position?: 'absolute' | 'relative'
+  position?: 'absolute' | 'relative' | 'fixed'
 }
 
 /**
@@ -43,7 +46,7 @@ type Props = {
  * Unfortunately doesn't exist as a prebuilt component yet, so this
  * component builds a bare-bones one from scratch.
  */
-const Toolbar = ({ position = 'absolute' }: Props) => {
+const Toolbar = ({ position = 'fixed' }: Props) => {
   const { mode, setMode } = useColorScheme();
   const [mounted, setMounted] = useState(false);
 
@@ -52,8 +55,8 @@ const Toolbar = ({ position = 'absolute' }: Props) => {
   return <Sheet
     variant={'outlined'}
     sx={{
-      display: 'flex', position: position, top: 0, left: 0, right: 0, p: 1.5, borderWidth: '0 0 1px 0',
-      flexDirection: 'row', alignItems: 'center', gap: 1.5, '--Card-radius': 0
+      display: 'flex', position: position, top: 0, left: 0, right: 0, p: 1.5, zIndex: 100,
+      borderWidth: '0 0 1px 0', flexDirection: 'row', alignItems: 'center', gap: 1, '--Card-radius': 0
     }}
   >
     <Link href={'/'} style={{display: 'flex'}}>
@@ -62,9 +65,19 @@ const Toolbar = ({ position = 'absolute' }: Props) => {
     <BrandingText brand={'WebAuthn'} />
 
     <Box flexGrow={1} />
-    { mounted && <Button
-        size={'sm'} variant={'soft'} onClick={() => setMode(mode == 'light' ? 'dark' : 'light')}>
-        Turn {mode == 'light' ? 'off' : 'on'} the lights</Button> }
+    <Link href={'https://github.com/cryptoAlgorithm/webauthn-demo'} passHref legacyBehavior>
+      <Button size={'sm'} variant={'outlined'} component={'a'} startDecorator={<GitHubIcon />}
+              target={'_blank'} rel={'noreferrer noopener'}>
+        Repository
+      </Button>
+    </Link>
+    <Tooltip title={`Turn ${mode === 'light' ? 'off' : 'on'} the lights`} variant={'soft'} arrow>
+      <IconButton
+        size={'sm'} variant={'outlined'}
+        onClick={() => mounted && setMode(mode === 'light' ? 'dark' : 'light')}>
+        { mode === 'light' ? <DarkMode /> : <LightMode /> }
+      </IconButton>
+    </Tooltip>
   </Sheet>
 }
 
