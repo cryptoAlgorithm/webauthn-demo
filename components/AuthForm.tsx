@@ -241,15 +241,15 @@ const AuthForm = () => {
     <Typography level={'h2'}>Welcome!</Typography>
     <Typography>Sign in or create an account</Typography>
     { error &&
-        <Alert
-            color={'danger'} sx={{mb: 1}}
-            endDecorator={
-              <IconButton variant={'plain'} size={'sm'} color={'danger'} onClick={() => setError(null)}>
-                <CloseRounded />
-              </IconButton>
-            }>
-          {error}
-        </Alert>
+      <Alert
+        color={'danger'} sx={{mb: 1}}
+        endDecorator={
+          <IconButton variant={'plain'} size={'sm'} color={'danger'} onClick={() => setError(null)}>
+            <CloseRounded />
+          </IconButton>
+        }>
+        {error}
+      </Alert>
     }
 
     <Divider />
@@ -257,8 +257,8 @@ const AuthForm = () => {
     <Tabs value={mode} onChange={(_, v) => setMode(v as AuthMode)}
           sx={{my: 1}}>
       <TabList variant={'plain'} sx={{p: 0}}>
-        <Tab>Authenticate</Tab>
-        <Tab>Register</Tab>
+        <Tab variant={mode == AuthMode.Auth ? 'outlined' : 'plain'}>Authenticate</Tab>
+        <Tab variant={mode == AuthMode.Register ? 'outlined' : 'plain'}>Register</Tab>
       </TabList>
     </Tabs>
 
@@ -267,22 +267,22 @@ const AuthForm = () => {
         <TextField label={'Your Name'} type={'text'} required placeholder={'John Doe'} disabled={loading}
                    value={name} onChange={evt => setName(evt.currentTarget.value)} sx={{ pb: 1 }}/>
         <TextField
-            label={'Email'} error={!!emailError} helperText={emailError} disabled={loading}
-            type={'email'} required
-            placeholder={mode == AuthMode.Register
-              ? 'your-new-email@invalid.com'
-              : 'registered-email@invalid.com'}
-            value={email} onChange={evt => setEmail(evt.currentTarget.value)}
-            endDecorator={
-              <Button type={'submit'}
-                      loading={loading} loadingIndicator={<CircularProgress size={'sm'}/>}>Continue</Button>}
+          label={'Email'} error={!!emailError} helperText={emailError} disabled={loading}
+          type={'email'} required
+          placeholder={mode == AuthMode.Register
+            ? 'your-new-email@invalid.com'
+            : 'registered-email@invalid.com'}
+          value={email} onChange={evt => setEmail(evt.currentTarget.value)}
+          endDecorator={
+            <Button type={'submit'}
+                    loading={loading} loadingIndicator={<CircularProgress size={'sm'}/>}>Continue</Button>}
         />
       </form>
     }
 
     { mode === AuthMode.Auth &&
       <Button loading={loading} loadingIndicator={<CircularProgress size={'sm'} />} onClick={handleSignIn}>
-          Sign In
+        Sign In
       </Button>
     }
 
