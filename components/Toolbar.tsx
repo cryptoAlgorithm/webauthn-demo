@@ -75,7 +75,7 @@ const Toolbar = ({ position = 'fixed' }: Props) => {
       <IconButton
         size={'sm'} variant={'outlined'}
         onClick={() => mounted && setMode(mode === 'light' ? 'dark' : 'light')}>
-        { mode === 'light' ? <DarkMode /> : <LightMode /> }
+        { !mounted ? <LightMode /> : mode === 'light' ? <DarkMode /> : <LightMode /> }
       </IconButton>
     </Tooltip>
   </Sheet>
