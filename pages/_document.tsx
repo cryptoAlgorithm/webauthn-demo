@@ -5,7 +5,9 @@ export default function Document() {
   return (
     <Html lang={'en'}>
       <Head>
-        <meta name={'description'} content={'Simple CTAP WebAuthn demo'} />
+        <meta name={'description'} content={
+          'Simple webapp demonstrating WebAuthn registration and authentication flows'
+        } />
         <meta name={'keywords'} content={'webauthn, demo, ctab'} />
         <link rel={'icon'} type={'image/png'} href={'/favicon.png'} />
       </Head>
