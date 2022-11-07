@@ -1,4 +1,5 @@
 import https from 'https'
+import {verify} from "jsonwebtoken";
 
 /**
  * Downloads a blob file from url over HTTP
@@ -33,3 +34,14 @@ async function downloadBlob(url: string): Promise<Buffer> {
     })
 }
 
+function blobToJwt(buf: Buffer) {
+    const token = buf.toString()
+    const b64sJwt = token.split('.')
+    const jwtHdr = JSON.parse(Buffer.from(b64sJwt[0], 'base64').toString())
+    const jwtPayload = JSON.parse(Buffer.from(b64sJwt[1], 'base64').toString())
+    const jwtSig = JSON.parse(Buffer.from(b64sJwt[2], 'base64').toString())
+
+    console.log('MDS JWT Header:', jwtHdr)
+    console.log('MDS JWT Payload:', jwtPayload)
+    console.log('MDS JWT Sig:', jwtSig)
+}
