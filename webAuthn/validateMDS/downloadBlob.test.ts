@@ -3,8 +3,11 @@ import {updateMDS} from './downloadBlob'
 
 describe('Validate MDS', () => {
     test('Update MDS to JWT', async () => {
-        await expect(updateMDS('https://mds3.fidoalliance.org/', 'https://valid.r3.roots.globalsign.com/'))
-                        .resolves.toBe(undefined)
+        await expect(updateMDS('https://mds3.fidoalliance.org/',
+       //                         'https://valid.r3.roots.globalsign.com/'))
+            'https://secure.globalsign.net/cacert/Root-R3.crt'))
+
+            .resolves.toBe(undefined)
     })
 })
 

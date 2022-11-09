@@ -7,10 +7,11 @@ import {X509Certificate} from "crypto";
 export async function updateMDS(mdsUrl:string, caUrl:string) {
     const p_downloadBlob = promisify(downloadBlob)
     try {
+        // Download MDS JWT
         const blobMds = await p_downloadBlob(mdsUrl, 0)
-        const blobCaCert = await p_downloadBlob(caUrl, 0)
-        const caPem = blobToCaCert(blobCaCert)
-        blobToJwt(blobMds, caPem)
+        // Download CA root cert to verify cert chain of MDS JWT
+        const blobCaRootCert = await p_downloadBlob(caUrl, 0)
+        blobToJwt(blobMds, blobCaRootCert)
     } catch (ex) {
         throw ex
     }
@@ -21,7 +22,7 @@ export async function updateMDS(mdsUrl:string, caUrl:string) {
  * @param {string} url The url where the file resides
  * @param {function} cb The callback with (err, resp)
  */
-function downloadBlob(url: string, redirectCount: number, cb: (err: Error | null, resp: string | null) => void ) {
+function downloadBlob(url: string, redirectCount: number, cb: (err: Error | null, resp: Buffer | null) => void ) {
     https.get(url,(response) => {
         const code = response.statusCode ?? 0
         if (code >= 400) {
@@ -39,12 +40,13 @@ function downloadBlob(url: string, redirectCount: number, cb: (err: Error | null
             }
         }
 
-        let data: string = ''
+        let data: Buffer[] = []
         response.on('data', (chunk) => {
-            data += chunk
+            data.push(chunk)
         })
         response.on('end', () => {
-            cb(null, data)
+            const dataAll = Buffer.concat(data)
+            cb(null, dataAll)
             return
         })
         response.on('error', (err) => {
@@ -57,20 +59,11 @@ function downloadBlob(url: string, redirectCount: number, cb: (err: Error | null
     })
 }
 
-function blobToCaCert(blob:string | null) : string {
-    if (blob) {
-        const data = blob.split('-----BEGIN CERTIFICATE-----')
-        if (data[1])
-            return '-----BEGIN CERTIFICATE-----' + data[1]
-    }
-    throw new Error('CA root cert not found')
-}
-
-function blobToJwt(token: string | null, caPem: string) {
+function blobToJwt(token: Buffer | null, caRootCert: Buffer | null) {
 //    const token = buf.toString()
 
-    if ( token != null ) {
-        const b64sJwt = token.split('.')
+    if (token) {
+        const b64sJwt = token.toString().split('.')
         const jwtHdr = JSON.parse(Buffer.from(b64sJwt[0], 'base64').toString())
         const jwtPayload = JSON.parse(Buffer.from(b64sJwt[1], 'base64').toString())
         //const jwtSig = JSON.parse(Buffer.from(b64sJwt[2], 'base64').toString())
@@ -79,12 +72,15 @@ function blobToJwt(token: string | null, caPem: string) {
         if (jwtHdr.x5c) {
             jwtHdr.x5c.forEach((der:string, index: number) => {
                 const cert = new X509Certificate(Buffer.from(der, 'base64'))
-                console.log(`Cert: ${index}\n-subject: ${cert.subject}\n-serial: ${cert.serialNumber}\n-issuer: ${cert.issuer}\n-validTo: ${cert.validTo}`)
+                console.log(`Cert ${index}:\n-subject: ${cert.subject}\n-serial: ${cert.serialNumber}\n-issuer: ${cert.issuer}\n-validTo: ${cert.validTo}`)
             })
         }
-        const caCert = new X509Certificate(caPem)
-        console.log(`CA Cert:\n-subject: ${caCert.subject}\n-serial: ${caCert.serialNumber}\n-issuer: ${caCert.issuer}\n-validTo: ${caCert.validTo}`)
-
+        if (caRootCert) {
+            const caCert = new X509Certificate(caRootCert)
+            console.log(`CA Root Cert:\n-subject: ${caCert.subject}\n-serial: ${caCert.serialNumber}\n-issuer: ${caCert.issuer}\n-validTo: ${caCert.validTo}`)
+        }
+        else
+            throw new Error('CA root cert not found')
         //console.log('MDS JWT Payload:', jwtPayload)
         //console.log('MDS JWT Sig:', jwtSig)
     }
