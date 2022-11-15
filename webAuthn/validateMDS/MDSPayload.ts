@@ -8,7 +8,7 @@ export type MDSPayload = {
 
 export type MetadataBLOBPayloadEntry = {
     aaid?: string
-    aaguid?: string
+    aaguid?: string // must be set for fido2
     attestationCertificateKeyIdentifiers?: string[]
     metadataStatement?: MetadataStatement
     biometricStatusReport?: BiometricStatusReports[]
@@ -21,14 +21,14 @@ export type MetadataBLOBPayloadEntry = {
 export type MetadataStatement = {
     legalHeader?: string
     aaid?: string
-    aaguid?: string
+    aaguid?: string     // must be set for fido2
     attestationCertificateKeyIdentifiers?: string[]
     description: string
     alternativeDescriptions?: AlternativeDescriptions[]
     authenticatorVersion: number
-    protocolFamily: string
+    protocolFamily: string  // uaf, u2f, fido2
     schema: number
-    upv: Version[]
+    upv: Version[]  // CTAP 2.0 - major:1, minor:0; CTAP 2.1 - major:1, minor:1
     authenticationAlgorithms: string[]
     publicKeyAlgAndEncodings: string[]
     attestationTypes: string[]
@@ -42,7 +42,7 @@ export type MetadataStatement = {
     tcDisplay: string[]
     tcDisplayContentType?: string
     tcDisplayPNGCharacteristics?: DisplayPNGCharacteristicsDescriptor[]
-    attestationRootCertificates: string[]
+    attestationRootCertificates: string[]   // base64 DER PKIX
     ecdaaTrustAnchors?: EcdaaTrustAnchor[]
     icon?: string
     supportedExtensions?: ExtensionDescriptor[]
