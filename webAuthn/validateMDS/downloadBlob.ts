@@ -5,7 +5,10 @@ import {AUTHN_WHITELIST} from "./authWhiteList";
 //import {verify} from "jsonwebtoken";
 import {verify} from "crypto"
 import {writeFileSync} from "fs";
-import {MDSPayload} from "./MDSPayload";
+import {MDSPayload, MetadataBLOBPayloadEntry} from "./MDSPayload";
+import assert from "node:assert";
+import {update} from "@firebase/database";
+import {getAttestationRootCerts, updateMetadataStatements} from "./DBUpdatesFirebase";
 
 export async function updateMDS() {
     const p_downloadBlob = promisify(downloadBlob)
@@ -21,42 +24,69 @@ export async function updateMDS() {
         let descWlist : string[] = []
         AUTHN_WHITELIST.forEach((value) => {
             aaguidWlist.push(value.aaguid)
-            descWlist.push(value.desc)
+            descWlist.push(value.description)
         })
 
-        const shortList = mds?.entries.filter((entry) => {
-            let aaguidIndex = (entry.metadataStatement?.aaguid)?
-                                aaguidWlist.indexOf(entry.metadataStatement?.aaguid) : -1
-            if (aaguidIndex > -1) {
-                if (entry.metadataStatement?.description === descWlist[aaguidIndex]) {
-                    aaguidWlist.splice(aaguidIndex, 1)
-                    descWlist.splice(aaguidIndex, 1)
-                    return true
-                }
+        // Get metadata statement of authenticators in whitelist
+        let authWlist: MetadataBLOBPayloadEntry[] = []
+        for (const entry of mds?.entries ?? []) {
+            const aaguidIndex = (entry.metadataStatement?.aaguid)?
+                  aaguidWlist.indexOf(entry.metadataStatement?.aaguid) : -1
+            if (aaguidIndex > -1 && entry.metadataStatement?.description === descWlist[aaguidIndex]) {
+                aaguidWlist.splice(aaguidIndex, 1)
+                descWlist.splice(aaguidIndex, 1)
+                authWlist.push(entry)
             }
-            return false
-            //return entry.metadataStatement?.description.includes('YubiKey') &&
-              //     entry.metadataStatement?.protocolFamily === 'fido2'
-        })
-        console.log(`Authenticator whitelist: ${shortList?.length}
-                     ${JSON.stringify(shortList, null, 2)}`)
-
-        // Print attestation root certs
-        // shortList?.forEach((entry) => {
-        //     console.log("aaguid:", entry.metadataStatement?.aaguid)
-        //     entry.metadataStatement?.attestationRootCertificates.forEach((der, index) => {
-        //         let cert = new X509Certificate(Buffer.from(der, 'base64'))
-        //         console.log(`Cert ${index}:\n-subject: ${cert.subject}\n-serial: ${cert.serialNumber}\n-issuer: ${cert.issuer}\n-validTo: ${cert.validTo}`)
-        //     })
-        // })
+            if (aaguidWlist.length === 0)
+                break
+        }
+        console.log(`Authenticator whitelist: ${authWlist?.length}\n${JSON.stringify(authWlist, null, 2)}`)
 
         // Write MDS json file, if path is specified
         if (process.env.MDS_JSON_FILEPATH)
             writeFileSync(process.env.MDS_JSON_FILEPATH, JSON.stringify(mds, null, 2), { flag: 'w'})
 
+        // Update whitelist to DB
+        await updateMetadataStatements(authWlist)
+
     } catch (ex) {
         throw ex
     }
+}
+
+export async function verifyAttestation(aaguid: string, attCerts: string[]) {
+    if (!aaguid)
+        throw new Error("Missing authenticator aaguid")
+
+    const attRootCerts = await getAttestationRootCerts(aaguid)
+
+    // Build cert chain
+    const attCertChain : X509Certificate[] = []
+    attCerts.forEach((der, index) => {
+        const cert = new X509Certificate(Buffer.from(der, 'base64'))
+        attCertChain.push(cert)
+    })
+    attRootCerts.forEach((der, index) => {
+        const cert = new X509Certificate(Buffer.from(der, 'base64'))
+        attCertChain.push(cert)
+    })
+
+    console.log('Root certs of:', aaguid)
+    attCertChain.forEach((cert, index) => {
+        console.log(`Cert ${index}:\n-subject: ${cert.subject}\n-serial: ${cert.serialNumber}\n-issuer: ${cert.issuer}\n-validTo: ${cert.validTo}`)
+    })
+
+    // Verify cert chain
+    const curDate = new Date()
+    for (let i = 0; i < attCertChain.length - 1; i++) {
+        let validFromDate = new Date(attCertChain[i].validFrom)
+        let validToDate = new Date(attCertChain[i].validTo)
+        if (validFromDate > curDate || validToDate < curDate)
+            throw new Error('Cert validity period is invalid')
+        if (!attCertChain[i].verify(attCertChain[i+1].publicKey))
+            throw new Error('Cert chain verify error')
+    }
+    console.log('Cert chain verify ok')
 }
 
 /**

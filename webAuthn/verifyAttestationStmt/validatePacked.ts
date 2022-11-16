@@ -46,6 +46,7 @@ const validatePacked = async (
 
     // Verify payload data with given public key
     const pubKeyPEM = await importCOSE(pubKey)
+
     const isV = verify(hashAlg, verifyData, pubKeyPEM, sig)
     if (!isV) throw new Error('Could not verify authenticity of payload with self-attestation key')
   }

@@ -1,3 +1,6 @@
+import {firestore} from "firebase-admin";
+import Timestamp = firestore.Timestamp;
+
 export type MDSPayload = {
     legalHeader?: string
     no: number
