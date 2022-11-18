@@ -2,7 +2,7 @@ name: Trigger MDS Update
 
 on:
   schedule:
-    - cron: '0 0 * * *' # Run on the 0th minute of every day
+    - cron: '0 0 * * *' # Run at 00:00 minute of every day
   workflow_dispatch:
 
 jobs:
@@ -14,6 +14,6 @@ jobs:
       env:
         TOKEN: ${{ secrets.API_BEARER_JWT }}
       run: |
-        curl --fail \ # Throw an error if API call failed
+        curl --fail \
              -X POST https://webauth.vercel.app/api/mds/update \
              -H "Authorization: Bearer $TOKEN"
