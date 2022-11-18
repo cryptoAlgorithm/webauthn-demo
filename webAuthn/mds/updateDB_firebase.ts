@@ -46,9 +46,15 @@ export async function getAttestationRootCerts(aaguid: string) {
 export async function updateMetadataStatements(newList: MetadataBLOBPayloadEntry[]) {
   s_logger.debug("Update MDS DB...")
 
+  let startDate = new Date()
+  startDate.setSeconds(startDate.getSeconds() - 1)
+
   // Set documents in mds collection with new metadata statement values
+  let count = 0
   for (const entry of newList) {
-    if (!entry.aaguid || !entry.metadataStatement)
+    if (!entry.aaguid || !entry.metadataStatement ||
+      !entry.metadataStatement.attestationRootCertificates
+    )
       continue
 
     await s_db
@@ -62,17 +68,22 @@ export async function updateMetadataStatements(newList: MetadataBLOBPayloadEntry
         timeOfLastStatusChange: entry.timeOfLastStatusChange,
         timestamp: firestore.FieldValue.serverTimestamp()
       })
+    count++
+    s_logger.debug({count, aaguid: entry.aaguid, desc: entry.metadataStatement.description},
+      "Updated metadata statement for")
   }
 
-  // Delete stale documents (i.e. not in newList), if any
+  // Delete stale documents, if any
   const deleteDocs = await s_db
     .collection('mds')
-    .where(firestore.FieldPath.documentId(), 'not-in', newList.map(entry => entry.aaguid))
+    .where('timestamp', '<', startDate)
     .get()
-  // Loop thru every matching document (i.e. not in newList) and delete it.
+  // Loop thru every matching document and delete it.
   for (const doc of deleteDocs.docs)
     await doc.ref.delete();
 
   s_logger.debug("Update MDS DB success")
+
+  return count
 }
 

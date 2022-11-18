@@ -1,115 +1,10 @@
 import https from 'https'
-import {promisify} from "util"
 import {X509Certificate} from "crypto";
-import {AUTHN_WHITELIST} from "./authWhiteList";
-//import {verify} from "jsonwebtoken";
 import {verify} from "crypto"
-import {writeFileSync} from "fs";
-import {MDSPayload, MetadataBLOBPayloadEntry} from "./MDSPayload";
-import {getAttestationRootCerts, updateMetadataStatements} from "./DBUpdatesFirebase";
+import {MDSPayload} from "./MDSPayload";
 import createLogger from "../../utils/createLogger";
 
-const p_downloadBlob = promisify(downloadBlob)
 const s_logger = createLogger('mds')
-
-export async function updateMDS() {
-  try {
-    // Download MDS blob
-    const blobMds = await p_downloadBlob(process.env.MDS_URL, 0)
-    s_logger.debug('MDS blob download done')
-
-    // Download CA root cert to verify cert chain of MDS JWT
-    const blobCaRootCert = await p_downloadBlob(process.env.MDS_ROOT_CERT_URL, 0)
-    s_logger.debug('CA root cert download done')
-
-    // Verify the MDS JWT and get the MDS payload
-    const mds = blobToJwt(blobMds, blobCaRootCert)
-
-    let aaguidWlist: string[] = []
-    let descWlist: string[] = []
-    AUTHN_WHITELIST.forEach((value) => {
-      aaguidWlist.push(value.aaguid)
-      descWlist.push(value.description)
-    })
-
-    // Get metadata statement of authenticators in whitelist
-    let authWlist: MetadataBLOBPayloadEntry[] = []
-    for (const entry of mds?.entries ?? []) {
-      const aaguidIndex = (entry.metadataStatement?.aaguid) ?
-        aaguidWlist.indexOf(entry.metadataStatement?.aaguid) : -1
-      if (aaguidIndex > -1 && entry.metadataStatement?.description === descWlist[aaguidIndex]) {
-        aaguidWlist.splice(aaguidIndex, 1)
-        descWlist.splice(aaguidIndex, 1)
-        authWlist.push(entry)
-      }
-      if (aaguidWlist.length === 0)
-        break
-    }
-
-    s_logger.debug({count: authWlist.length, authWlist}, 'updateMDS: authenticator whitelist')
-
-    // Write MDS json file, if path is specified
-    if (process.env.MDS_JSON_FILEPATH)
-      writeFileSync(process.env.MDS_JSON_FILEPATH, JSON.stringify(mds, null, 2), {flag: 'w'})
-
-    // Update whitelist to DB
-    await updateMetadataStatements(authWlist)
-
-    s_logger.debug({aaguid: authWlist.map(entry => entry.aaguid)}, "Update MDS success")
-    s_logger.flush()
-
-  } catch (ex) {
-    const err = ex as Error
-    s_logger.error({message: err.message, stack: err.stack}, 'Update MDS failed')
-    throw ex
-  }
-}
-
-export async function verifyAttestation(aaguid: string, attCerts: string[]) {
-  if (!aaguid)
-    throw new Error("Missing authenticator aaguid")
-
-  const attRootCerts = await getAttestationRootCerts(aaguid)
-
-  // Build cert chain
-  const attCertChain: X509Certificate[] = []
-  attCerts.forEach((der, index) => {
-    const cert = new X509Certificate(Buffer.from(der, 'base64'))
-    attCertChain.push(cert)
-    s_logger.debug({
-        subject: cert.subject,
-        serialNumber: cert.serialNumber,
-        issuer: cert.issuer,
-        validFrom: cert.validFrom,
-        validTo: cert.validTo
-      },
-      `verifyAttestation: attestation cert chain (${index})`)
-  })
-  attRootCerts.forEach((der, index) => {
-    const cert = new X509Certificate(Buffer.from(der, 'base64'))
-    attCertChain.push(cert)
-    s_logger.debug({
-        subject: cert.subject,
-        serialNumber: cert.serialNumber,
-        issuer: cert.issuer,
-        validFrom: cert.validFrom,
-        validTo: cert.validTo
-      },
-      `verifyAttestation: attestation root cert chain (${index})`)
-  })
-
-  // Verify cert chain
-  const curDate = new Date()
-  for (let i = 0; i < attCertChain.length - 1; i++) {
-    let validFromDate = new Date(attCertChain[i].validFrom)
-    let validToDate = new Date(attCertChain[i].validTo)
-    if (validFromDate > curDate || validToDate < curDate)
-      throw new Error('Cert validity period is invalid')
-    if (!attCertChain[i].verify(attCertChain[i + 1].publicKey))
-      throw new Error('Cert chain verify error')
-  }
-  s_logger.debug('verifyAttestation: Cert chain verify ok')
-}
 
 async function downloadBlob2(url: string | undefined, redirectCount: number): Promise<Buffer> {
   if (url == undefined || url == '')
@@ -159,7 +54,8 @@ async function downloadBlob2(url: string | undefined, redirectCount: number): Pr
  * @param {number} redirectCount The counter keeping track of redirect occurrences
  * @param {function} cb The callback with (err, resp)
  */
-function downloadBlob(url: string | undefined, redirectCount: number, cb: (err: Error | null, resp: Buffer | null) => void) {
+export function downloadBlob(url: string | undefined, redirectCount: number,
+                             cb: (err: Error | null, resp: Buffer | null) => void) {
   if (url == undefined || url == '')
     throw new Error("URL undefined")
 
@@ -199,7 +95,7 @@ function downloadBlob(url: string | undefined, redirectCount: number, cb: (err: 
   })
 }
 
-function blobToJwt(token: Buffer | null, caRootCert: Buffer | null) {
+export function blobToJwt(token: Buffer | null, caRootCert: Buffer | null) {
   if (token) {
     const b64sJwt = token.toString().split('.')
     const jwtHdr = JSON.parse(Buffer.from(b64sJwt[0], 'base64').toString())

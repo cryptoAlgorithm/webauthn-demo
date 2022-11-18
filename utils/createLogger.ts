@@ -3,7 +3,7 @@ import pino from 'pino';
 // const testTransport = pino.transport({
 //   target: 'pino/file',
 //   options: {
-//     destination: './test.txt'
+//     destination: './test.log'
 //   }
 // })
 
@@ -16,6 +16,6 @@ const parentLogger = pino({
   }
 })
 
-const createLogger = (subsystem: string): pino.Logger => parentLogger.child({ subsystem })
+const createLogger = (subsystem: string): pino.Logger => parentLogger.child({subsystem})
 
 export default createLogger
