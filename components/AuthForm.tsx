@@ -31,6 +31,7 @@ enum AuthMode {
  * @param email User email
  * @param name User display name
  * @param timeout Registration timeout
+ * @param uvRequired If user presence is required or just preferred
  * @param challenge Registration challenge from server
  */
 const webAuthnRegister = async (
@@ -38,6 +39,7 @@ const webAuthnRegister = async (
   email: string,
   name: string,
   timeout: number,
+  uvRequired: boolean,
   challenge: string
 ): Promise<Credential | null> => navigator.credentials.create({
   publicKey: {
@@ -50,7 +52,7 @@ const webAuthnRegister = async (
     authenticatorSelection: {
       requireResidentKey: false,
       residentKey: 'preferred',
-      userVerification: 'required'
+      userVerification: uvRequired ? 'required' : 'preferred'
     },
 
     // User:
@@ -80,12 +82,14 @@ const webAuthnRegister = async (
 
 const webAuthnAuth = async (
   challenge: string,
-  timeout: number
+  timeout: number,
+  uvRequired: boolean
 ) => navigator.credentials.get({
   publicKey: {
     challenge: new TextEncoder().encode(challenge),
     timeout: timeout,
     rpId: location.hostname === 'localhost' ? 'localhost' : 'webauth.vercel.app',
+    userVerification: uvRequired ? 'required' : 'preferred',
   }
 })
 
@@ -130,14 +134,19 @@ const AuthForm = () => {
       return
     }
     // Get registration params from server, no validation done as server is trusted
-    const { challenge, nonce, id, timeout } = await resp.json()
+    const { challenge, nonce, id, timeout, uv } = await resp.json()
 
     // Try WebAuthn registration
     let cred: PublicKeyCredential | null
     try {
       // Steps 1 and 2 - Construct options, call navigator.credentials.create() and
       // pass options as the publicKey option
-      cred = await webAuthnRegister(id, email.trim(), name.trim(), timeout, challenge) as PublicKeyCredential
+      cred = await webAuthnRegister(
+        id, email.trim(), name.trim(),
+        timeout,
+        uv,
+        challenge
+      ) as PublicKeyCredential
     } catch (e) {
       const ex = e as Error
       handleFlowCancel(
@@ -181,12 +190,12 @@ const AuthForm = () => {
 
     const initResp = await sendPost('/api/auth/signIn')
     if (!initResp.ok) setError('Failed to initiate auth ceremony with server')
-    const { nonce, challenge, timeout } = await initResp.json()
+    const { nonce, challenge, timeout, uv } = await initResp.json()
 
     let credential: PublicKeyCredential
     try {
       // Step 1 and 2 - Get cred with config
-      credential = await webAuthnAuth(challenge, timeout) as PublicKeyCredential
+      credential = await webAuthnAuth(challenge, timeout, uv) as PublicKeyCredential
     } catch (e) {
       const ex = e as Error
       handleFlowCancel(

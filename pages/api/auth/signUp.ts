@@ -13,6 +13,7 @@ type Data = {
   nonce: string
   id: string
   timeout: number
+  uv: boolean
 }
 
 const schema = z.object({
@@ -24,6 +25,7 @@ export const deleteTempSessionSchema = z.object({
 })
 
 const WEBAUTHN_TIMEOUT = 5*60*1000
+export const WEBAUTHN_UV_REQUIRED = !!process.env.WEBAUTHN_UV_REQUIRED
 
 const handler = async function handler(
   req: NextApiRequest,
@@ -98,7 +100,8 @@ const handler = async function handler(
     challenge: challenge,
     nonce: signupNonce,
     id: id,
-    timeout: WEBAUTHN_TIMEOUT
+    timeout: WEBAUTHN_TIMEOUT,
+    uv: WEBAUTHN_UV_REQUIRED
   })
 }
 

@@ -8,6 +8,7 @@ import validateAuth from '../../../webAuthn/validateAuth';
 import authResponse from '../../../auth/authResponse';
 import createLogger from '../../../utils/createLogger';
 import methodGuard from '../../../utils/req/methodGuard';
+import {WEBAUTHN_UV_REQUIRED} from "./signUp";
 
 const logger = createLogger('authenticate')
 
@@ -87,7 +88,8 @@ const handler = async function handler(
       credential.signCount,
       challenge,
       ['http://localhost:3000', 'https://webauth.vercel.app'],
-      ['localhost', 'webauth.vercel.app']
+      ['localhost', 'webauth.vercel.app'],
+      WEBAUTHN_UV_REQUIRED
     )
     logger.debug({ nonce, userID: userHandle }, 'Successfully validated auth ceremony')
 

@@ -9,6 +9,7 @@ import { AuthedData } from './authenticate';
 import authResponse from '../../../auth/authResponse';
 import methodGuard from '../../../utils/req/methodGuard';
 import createLogger from '../../../utils/createLogger';
+import {WEBAUTHN_UV_REQUIRED} from "./signUp";
 
 const logger = createLogger('register')
 
@@ -54,7 +55,8 @@ const handler = async function handler(
       attestation,
       challenge,
       ['http://localhost:3000', 'https://webauth.vercel.app'],
-      ['localhost', 'webauth.vercel.app']
+      ['localhost', 'webauth.vercel.app'],
+      WEBAUTHN_UV_REQUIRED
     )
 
     // Step 24 - Verify that the credentialId is not yet registered for any user.

@@ -4,7 +4,7 @@ import { ErrorResponse } from '../ErrorResponse';
 import * as crypto from 'crypto';
 import { AuthCeremonyBookmark, DBCollections, typeConverter } from '../DBTypes';
 import { firestore } from 'firebase-admin';
-import { deleteTempSessionSchema } from './signUp';
+import {deleteTempSessionSchema, WEBAUTHN_UV_REQUIRED} from './signUp';
 import routeCatchable from '../../../utils/routeCatchable';
 import methodGuard from '../../../utils/req/methodGuard';
 
@@ -12,6 +12,7 @@ type Data = {
   challenge: string
   nonce: string
   timeout: number
+  uv: boolean
 }
 
 const WEBAUTHN_AUTH_TIMEOUT = 5*60*1000
@@ -67,7 +68,8 @@ const handler = async function handler(
   res.status(200).json({
     challenge: challenge,
     nonce: signupNonce,
-    timeout: WEBAUTHN_AUTH_TIMEOUT
+    timeout: WEBAUTHN_AUTH_TIMEOUT,
+    uv: WEBAUTHN_UV_REQUIRED
   })
 }
 
