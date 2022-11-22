@@ -5,9 +5,6 @@ import createLogger from "../../utils/createLogger";
 const s_logger = createLogger('mds')
 
 export async function verifyAttestationTrust(aaguid: string, attCerts: string[]) {
-  if (!aaguid)
-    throw new Error("Missing authenticator aaguid")
-
   const attRootCerts = await getAttestationRootCerts(aaguid)
 
   // Build cert chain
