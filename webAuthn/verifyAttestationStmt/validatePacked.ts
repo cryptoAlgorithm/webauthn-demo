@@ -1,7 +1,16 @@
 import { verify, X509Certificate } from 'crypto';
 import importCOSE, { COSEAlgHash } from '../util/importCOSE';
+import {verifyAttestationTrust} from "../mds/verifyAttestationTrust";
 
+/**
+ * Validate an attestation statement of type "packed"
+ * @param aaGuid The authenticator's guild
+ * @param attStmt The attestation statement
+ * @param verifyData The data to verify
+ * @param pubKey The public key
+ */
 const validatePacked = async (
+  aaGuid: string,
   attStmt: {[key: string]: any},
   verifyData: Buffer,
   pubKey: Buffer
@@ -15,6 +24,10 @@ const validatePacked = async (
 
   if (x5c) {
     if (!Array.isArray(x5c) || x5c.length === 0) throw new Error('x5c present but is invalid or has no certs')
+
+    // Verify that the cert chain is one that we trust
+    await verifyAttestationTrust(aaGuid, x5c)
+
     const cert = new X509Certificate(x5c[0])
 
     // Verify X.509 attestation statement cert meets requirements

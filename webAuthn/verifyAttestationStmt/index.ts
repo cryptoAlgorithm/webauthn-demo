@@ -1,6 +1,7 @@
 import validatePacked from './validatePacked';
 
 const verifyAttestationStmt = async (
+  aaGuid: string,
   format: string,
   attStmt: {[key: string]: any},
   verifyData: Buffer,
@@ -9,7 +10,7 @@ const verifyAttestationStmt = async (
   // Step 19 - Determine the attestation statement format by performing a US ASCII case-sensitive match on fmt
   switch (format) {
     case 'packed':
-      await validatePacked(attStmt, verifyData, pubKey)
+      await validatePacked(aaGuid, attStmt, verifyData, pubKey)
       break
     case 'none':
       console.warn('Attestation statement has none type! This is unsafe!')

@@ -5,6 +5,10 @@ import { AuthenticatorDataFlags } from './types/AuthenticatorData';
 import verifyRPIDHash from './util/verifyRPIDHash';
 import sha256Hash from './util/sha256Hash';
 import verifyAttestationStmt from './verifyAttestationStmt';
+import createLogger from "../utils/createLogger";
+import binaryUUIDToString from "../utils/binaryUUIDToString";
+
+const logger = createLogger('validateRegistration')
 
 type Attestation = {
   fmt: string
@@ -77,7 +81,8 @@ const validateRegistration = async (
     'Attested credentials data unexpectedly missing from registration authentication data'
   );
 
-  const { credentialID, credentialPubKey } = attestedCredentialData
+  const { credentialID, credentialPubKey, authenticatorGuid } = attestedCredentialData
+  logger.debug('Authenticator GUID: %s', binaryUUIDToString(authenticatorGuid))
 
   // Step 12 - Verify that the rpIdHash in authData is the SHA-256 hash of the RP ID
   // expected by the Relying Party.
@@ -94,7 +99,11 @@ const validateRegistration = async (
   )
 
   // Steps 17, 19 & 20 - Verify attestation statement
-  await verifyAttestationStmt(fmt, attStmt, Buffer.concat([authData, clientDataHash]), credentialPubKey)
+  await verifyAttestationStmt(
+    binaryUUIDToString(authenticatorGuid),
+    fmt, attStmt,
+    Buffer.concat([authData, clientDataHash]), credentialPubKey
+  )
 
   // Step 23 - Verify that the credentialId is ≤ 1023 bytes
   if (credentialID.byteLength > 1023) throw new Error(
