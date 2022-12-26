@@ -1,4 +1,4 @@
-import { FormEvent, useCallback, useEffect, useLayoutEffect, useState } from 'react'
+import {FormEvent, useCallback, useEffect, useLayoutEffect, useState} from 'react'
 import sendDelete from '../utils/req/sendDelete'
 import sendPost from '../utils/req/sendPost'
 import arrayBufferToB64 from '../utils/arrayBufferToB64'
@@ -16,7 +16,7 @@ import {
   Typography
 } from '@mui/joy'
 import CloseRounded from '../icons/CloseRounded'
-import { useRouter } from 'next/router';
+import {useRouter} from 'next/router';
 
 enum AuthMode {
   Auth, Register
@@ -52,7 +52,8 @@ const webAuthnRegister = async (
     authenticatorSelection: {
       requireResidentKey: false,
       residentKey: 'preferred',
-      userVerification: uvRequired ? 'required' : 'preferred'
+      userVerification: uvRequired ? 'required' : 'preferred',
+      authenticatorAttachment: 'cross-platform'
     },
 
     // User:
@@ -117,7 +118,7 @@ const AuthForm = () => {
     setLoading(false)
     sendDelete(
       '/api/auth/' + (isSignUp ? 'signUp' : 'signIn'),
-      { nonce: nonce }
+      {nonce: nonce}
     ).then() // Ignore result
   }, [])
 
@@ -126,7 +127,7 @@ const AuthForm = () => {
     setLoading(true)
     clearErrors()
 
-    const resp = await sendPost('/api/auth/signUp', { email: email.trim(), name: name.trim() })
+    const resp = await sendPost('/api/auth/signUp', {email: email.trim(), name: name.trim()})
     if (!resp.ok) {
       setLoading(false)
       if (resp.status === 403) setEmailError('Account already exists, try authenticating instead')
@@ -134,7 +135,7 @@ const AuthForm = () => {
       return
     }
     // Get registration params from server, no validation done as server is trusted
-    const { challenge, nonce, id, timeout, uv } = await resp.json()
+    const {challenge, nonce, id, timeout, uv} = await resp.json()
 
     // Try WebAuthn registration
     let cred: PublicKeyCredential | null
@@ -168,7 +169,7 @@ const AuthForm = () => {
     const
       clientExtensionResults = cred.getClientExtensionResults(),
       response = cred.response as AuthenticatorAttestationResponse,
-      { clientDataJSON, attestationObject } = response
+      {clientDataJSON, attestationObject} = response
 
     // Step 5 - Run UTF-8 decode on the value of response.clientDataJSON
     const JSONText = new TextDecoder().decode(clientDataJSON)
@@ -190,7 +191,7 @@ const AuthForm = () => {
 
     const initResp = await sendPost('/api/auth/signIn')
     if (!initResp.ok) setError('Failed to initiate auth ceremony with server')
-    const { nonce, challenge, timeout, uv } = await initResp.json()
+    const {nonce, challenge, timeout, uv} = await initResp.json()
 
     let credential: PublicKeyCredential
     try {
@@ -206,7 +207,7 @@ const AuthForm = () => {
       )
       return
     }
-    const { response } = credential
+    const {response} = credential
     // Step 3 - If response is not an instance of AuthenticatorAssertionResponse,
     // abort the ceremony with a user-visible error.
     if (!(response instanceof AuthenticatorAssertionResponse)) {
@@ -217,7 +218,7 @@ const AuthForm = () => {
     const clientExtensionResults = credential.getClientExtensionResults()
     // Step 5 - skipped as we do not know the user prior to the auth ceremony
 
-    const { authenticatorData, clientDataJSON, userHandle, signature } = response
+    const {authenticatorData, clientDataJSON, userHandle, signature} = response
 
     // Step 6b (i) - Verify that response.userHandle is present
     if (!userHandle) {
@@ -249,19 +250,19 @@ const AuthForm = () => {
   return <Card variant={'outlined'} sx={{width: 400, gap: 1, boxShadow: 'md', m: 2}}>
     <Typography level={'h2'}>Welcome!</Typography>
     <Typography>Sign in or create an account</Typography>
-    { error &&
+    {error &&
       <Alert
         color={'danger'} sx={{mb: 1}}
         endDecorator={
           <IconButton variant={'plain'} size={'sm'} color={'danger'} onClick={() => setError(null)}>
-            <CloseRounded />
+            <CloseRounded/>
           </IconButton>
         }>
         {error}
       </Alert>
     }
 
-    <Divider />
+    <Divider/>
 
     <Tabs value={mode} onChange={(_, v) => setMode(v as AuthMode)}
           sx={{my: 1}}>
@@ -271,10 +272,10 @@ const AuthForm = () => {
       </TabList>
     </Tabs>
 
-    { mode === AuthMode.Register &&
+    {mode === AuthMode.Register &&
       <form onSubmit={handleSignUp}>
         <TextField label={'Name'} type={'text'} required placeholder={'John Doe'} disabled={loading}
-                   value={name} onChange={evt => setName(evt.currentTarget.value)} sx={{ pb: 1 }}/>
+                   value={name} onChange={evt => setName(evt.currentTarget.value)} sx={{pb: 1}}/>
         <TextField
           label={'Email'} error={!!emailError} helperText={emailError} disabled={loading}
           type={'email'} required
@@ -289,9 +290,9 @@ const AuthForm = () => {
       </form>
     }
 
-    { mode === AuthMode.Auth &&
+    {mode === AuthMode.Auth &&
       <Button size={'lg'} onClick={handleSignIn}
-          loading={loading} loadingIndicator={<CircularProgress size={'sm'} />}>
+              loading={loading} loadingIndicator={<CircularProgress size={'sm'}/>}>
         Sign In
       </Button>
     }
