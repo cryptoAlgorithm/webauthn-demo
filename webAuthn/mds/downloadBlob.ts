@@ -6,47 +6,47 @@ import createLogger from "../../utils/createLogger";
 
 const s_logger = createLogger('mds')
 
-async function downloadBlob2(url: string | undefined, redirectCount: number): Promise<Buffer> {
-  if (url == undefined || url == '')
-    throw new Error("URL undefined")
-
-  return await new Promise((resolve, reject) => {
-    https.get(url, (response) => {
-      const code = response.statusCode ?? 0
-      if (code >= 400) {
-        reject(new Error(response.statusMessage))
-        return
-      }
-      // Handle redirects
-      if (code > 300 && code < 400 && !!response.headers.location) {
-        s_logger.debug({redirectCount, redirect: response.headers.location}, 'downloadBlob: redirecting')
-        if (redirectCount < 10)
-          return downloadBlob2(response.headers.location, redirectCount++)
-        else {
-          reject(new Error("Too many redirects"))
-          return
-        }
-      }
-
-      let data: Buffer[] = []
-      response.on('data', (chunk) => {
-        data.push(chunk)
-      })
-      response.on('end', () => {
-        const dataAll = Buffer.concat(data)
-        return resolve(dataAll)
-      })
-      response.on('error', (err) => {
-        reject(err)
-        return
-      })
-    }).on('error', err => {
-      reject(err)
-      return
-    })
-  })
-
-}
+// async function downloadBlob2(url: string | undefined, redirectCount: number): Promise<Buffer> {
+//   if (url == undefined || url == '')
+//     throw new Error("URL undefined")
+//
+//   return await new Promise((resolve, reject) => {
+//     https.get(url, (response) => {
+//       const code = response.statusCode ?? 0
+//       if (code >= 400) {
+//         reject(new Error(response.statusMessage))
+//         return
+//       }
+//       // Handle redirects
+//       if (code > 300 && code < 400 && !!response.headers.location) {
+//         s_logger.debug({redirectCount, redirect: response.headers.location}, 'downloadBlob: redirecting')
+//         if (redirectCount < 10)
+//           return downloadBlob2(response.headers.location, redirectCount++)
+//         else {
+//           reject(new Error("Too many redirects"))
+//           return
+//         }
+//       }
+//
+//       let data: Buffer[] = []
+//       response.on('data', (chunk) => {
+//         data.push(chunk)
+//       })
+//       response.on('end', () => {
+//         const dataAll = Buffer.concat(data)
+//         return resolve(dataAll)
+//       })
+//       response.on('error', (err) => {
+//         reject(err)
+//         return
+//       })
+//     }).on('error', err => {
+//       reject(err)
+//       return
+//     })
+//   })
+//
+// }
 
 /**
  * Downloads a blob file from url over HTTP(S)
