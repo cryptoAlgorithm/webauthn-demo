@@ -28,7 +28,7 @@ const config = {
   // this setting is required for jest config using config files!
   coverageProvider: 'v8',
 
-  coverageReporters: ['html'],
+  coverageReporters: ['html', 'json-summary'],
 };
 
 module.exports = config;
