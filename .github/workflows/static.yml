@@ -41,6 +41,16 @@ jobs:
           NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_PROJECT_ID }}
           FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
           FIREBASE_PRIVATE_KEY: ${{ secrets.FIREBASE_PRIVATE_KEY }}
+          # URL to download MDS file
+          MDS_URL: https://mds3.fidoalliance.org/
+          # MDS cert CN must match this value
+          MDS_HOST: mds.fidoalliance.org
+          # URL to download root cert to verify MDS cert chain
+          MDS_ROOT_CERT_URL: https://secure.globalsign.net/cacert/Root-R3.crt
+          # Authenticator whitelist flag - set to false to disable whitelist i.e. allow all authenticators in MDS
+          MDS_AUTH_WHITELIST: true
+          # Write MDS json file to this location, if specified
+          MDS_JSON_FILEPATH: ${{ env.RUNNER_TEMP }}/mds3.json
         run: npm run coverage
 
       - name: Upload artifact
