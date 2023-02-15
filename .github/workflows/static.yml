@@ -50,7 +50,7 @@ jobs:
           # Authenticator whitelist flag - set to false to disable whitelist i.e. allow all authenticators in MDS
           MDS_AUTH_WHITELIST: true
           # Write MDS json file to this location, if specified
-          MDS_JSON_FILEPATH: ${{ env.RUNNER_TEMP }}/mds3.json
+          MDS_JSON_FILEPATH: /tmp/mds3.json
         run: npm run coverage
 
       - name: Upload artifact
