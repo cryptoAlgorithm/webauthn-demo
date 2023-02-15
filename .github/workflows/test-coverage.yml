@@ -1,5 +1,5 @@
 # Simple workflow for deploying static content to GitHub Pages
-name: Test and deploy coverage status
+name: Run tests and upload test & coverage reports
 
 on:
   # Runs on pushes targeting the default branch
@@ -30,13 +30,14 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+
       - name: Setup Pages
         uses: actions/configure-pages@v3
 
-      - name: Install dependancies
+      - name: Install dependencies
         run: npm i .
 
-      - name: Run tests with converage
+      - name: Run tests with coverage
         env:
           NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${{ secrets.NEXT_PUBLIC_FIREBASE_PROJECT_ID }}
           FIREBASE_CLIENT_EMAIL: ${{ secrets.FIREBASE_CLIENT_EMAIL }}
@@ -61,6 +62,7 @@ jobs:
         uses: actions/upload-pages-artifact@v1
         with:
           path: './coverage/'
+
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v1
