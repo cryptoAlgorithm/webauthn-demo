@@ -54,6 +54,9 @@ jobs:
           MDS_JSON_FILEPATH: /tmp/mds3.json
         run: npm run coverage || true
 
+      - name: Create Coverage Shields.io JSON
+        run: node ./ci/createBadges.js ./coverage/coverage-badge.json
+
       - name: Prepare files
         run: |
           mv test-report.html coverage/
