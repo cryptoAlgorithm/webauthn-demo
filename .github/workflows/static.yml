@@ -53,6 +53,10 @@ jobs:
           MDS_JSON_FILEPATH: /tmp/mds3.json
         run: npm run coverage || true
 
+      - name: Prepare files
+        run: |
+          mv test-report.html coverage/
+
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v1
         with:
