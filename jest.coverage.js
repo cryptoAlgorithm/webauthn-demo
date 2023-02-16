@@ -7,10 +7,12 @@ const config = {
 
   reporters: [
     'default',
-    ['jest-html-reporter', {
-      'pageTitle': 'Test Report'
-    }]
+    [
+      'jest-html-reporter', {'pageTitle': 'Test Report'},
+    ]
   ],
+
+  testResultsProcessor: './node_modules/jest-json-reporter',
 
   collectCoverage: true,
   collectCoverageFrom: [
