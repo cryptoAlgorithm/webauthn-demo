@@ -1,5 +1,5 @@
 # Simple workflow for deploying static content to GitHub Pages
-name: Run tests and upload test & coverage reports
+name: Run Tests and Publish Test & Coverage Reports
 
 on:
   # Runs on pushes targeting the default branch
@@ -54,18 +54,18 @@ jobs:
           MDS_JSON_FILEPATH: /tmp/mds3.json
         run: npm run coverage || true
 
-      - name: Create Coverage Shields.io JSON
+      - name: Create coverage and tests badges
         run: node ./ci/createBadges.js ./coverage/cov-badge.svg ./coverage/test-badge.svg
 
-      - name: Prepare files
+      - name: Prepare files for publish
         run: |
           mv test-report.html coverage/
 
-      - name: Upload artifact
+      - name: Upload files
         uses: actions/upload-pages-artifact@v1
         with:
           path: './coverage/'
 
-      - name: Deploy to GitHub Pages
+      - name: Publish to Pages
         id: deployment
         uses: actions/deploy-pages@v1
