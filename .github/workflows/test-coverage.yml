@@ -22,7 +22,7 @@ concurrency:
 
 jobs:
   # Single deploy job since we're just deploying
-  deploy:
+  test-coverage:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -55,7 +55,7 @@ jobs:
         run: npm run coverage || true
 
       - name: Create Coverage Shields.io JSON
-        run: node ./ci/createBadges.js ./coverage/coverage-badge.json
+        run: node ./ci/createBadges.js ./coverage/cov-badge.svg ./coverage/test-badge.svg
 
       - name: Prepare files
         run: |
