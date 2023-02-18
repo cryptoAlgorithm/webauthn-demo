@@ -1,5 +1,5 @@
 # Simple workflow for deploying static content to GitHub Pages
-name: Run Tests and Publish Test & Coverage Reports
+name: Tests & Coverage
 
 on:
   # Runs on pushes targeting the default branch
@@ -28,7 +28,7 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout code
         uses: actions/checkout@v3
 
       - name: Setup Pages
@@ -54,18 +54,18 @@ jobs:
           MDS_JSON_FILEPATH: /tmp/mds3.json
         run: npm run coverage || true
 
-      - name: Create coverage and tests badges
+      - name: Create test and coverage badges
         run: node ./ci/createBadges.js ./coverage/cov-badge.svg ./coverage/test-badge.svg
 
-      - name: Prepare files for publish
+      - name: Prepare artifact
         run: |
           mv test-report.html coverage/
 
-      - name: Upload files
+      - name: Upload artifact
         uses: actions/upload-pages-artifact@v1
         with:
           path: './coverage/'
 
-      - name: Publish to Pages
+      - name: Publish artifact to Pages
         id: deployment
         uses: actions/deploy-pages@v1
