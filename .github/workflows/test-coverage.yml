@@ -1,9 +1,10 @@
-# Simple workflow for deploying static content to GitHub Pages
+# Workflow to run unit tests and code coverage and deploy the test and
+# and coverage report to GitHub Pages
 name: Tests & Coverage
 
 on:
-  # Runs on pushes targeting the default branch
-  push:
+  # Runs on pull request to main branch
+  pull_request:
     branches: ["main"]
 
   # Allows you to run this workflow manually from the Actions tab
@@ -37,7 +38,7 @@ jobs:
       #######################
       ## Dependencies
       #######################
-      # Caching
+      # Enable caching of dependencies
       - name: Get npm cache directory
         id: npm-cache-dir
         shell: bash
@@ -50,12 +51,12 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-node-
 
-      # Install with NPM if no cache hit
+      # Install with npm if no cache hit
       - name: Install dependencies
         run: npm i .
 
       #######################
-      ## Tests
+      ## Unit Tests
       #######################
       - name: Run tests with coverage
         env:
