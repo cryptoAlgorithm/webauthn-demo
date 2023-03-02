@@ -1,4 +1,4 @@
-const config = {
+module.exports = {
   preset: 'ts-jest',
   testEnvironment: 'node',
   setupFiles: [
@@ -8,7 +8,10 @@ const config = {
   reporters: [
     'default',
     [
-      'jest-html-reporter', {'pageTitle': 'Test Report'},
+      'jest-html-reporter', {
+        'pageTitle': 'Test Report',
+        'dateFormat': "UTC:yyyy-mm-dd HH:MM:ss' UTC'",
+      },
     ]
   ],
 
@@ -16,7 +19,7 @@ const config = {
 
   collectCoverage: true,
   collectCoverageFrom: [
-    '**/*.{js,jsx,ts,tsx}',
+    '**/*.{js,jsx,mjs,ts,tsx}',
     '!./coverage/**',
   ],
   coverageThreshold: {
@@ -31,6 +34,5 @@ const config = {
   coverageProvider: 'v8',
 
   coverageReporters: ['html', 'json-summary'],
-};
+}
 
-module.exports = config;
