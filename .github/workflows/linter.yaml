@@ -2,8 +2,6 @@ name: Lint Codebase
 
 on:
   push:
-    branches-ignore: [ master, main ]
-  pull_request:
     branches: [ master, main ]
 
 jobs:
