@@ -67,7 +67,8 @@ jobs:
           MDS_AUTH_WHITELIST: true
           # Write MDS json file to this location, if specified
           MDS_JSON_FILEPATH: /tmp/mds3.json
-        run: npm test -- --coverage --collectCoverageFrom='**/*.{js,jsx,mjs,ts,tsx}' --collectCoverageFrom='!./coverage/**' --coverageProvider='v8'
+        #run: npm test -- --coverage --collectCoverageFrom='**/*.{js,jsx,mjs,ts,tsx}' --collectCoverageFrom='!./coverage/**' --coverageProvider='v8'
+        run: npm run coverage
 
       - name: Lint codebase
         if: always()
