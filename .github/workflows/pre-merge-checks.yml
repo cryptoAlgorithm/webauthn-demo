@@ -70,9 +70,11 @@ jobs:
         run: npm test -- --coverage --collectCoverageFrom='**/*.{js,jsx,mjs,ts,tsx}' --collectCoverageFrom='!./coverage/**' --coverageProvider='v8'
 
       - name: Lint codebase
-        run: npm run lint .
+        if: always()
+        run: npm run lint:eslint
 
       - name: Check for vulnerable dependencies
+        if: always()
         run: |
           npm audit --json | npx npm-audit-markdown
           cat npm-audit.md

@@ -9,7 +9,8 @@
     "lint": "next lint",
     "test": "jest",
     "coverage": "jest --config=jest.coverage.js",
-    "lint": "eslint -f html -o eslint-report.html",
+    "lint:eslint:html": "eslint -f html -o eslint-report.html",
+    "lint:eslint": "eslint .",
     "dep-check": "npm audit --json | npx npm-audit-markdown --output npm-audit-report.md & npx markdown-to-html-cli --source npm-audit-report.md --output npm-audit-report.html"
   },
   "dependencies": {
