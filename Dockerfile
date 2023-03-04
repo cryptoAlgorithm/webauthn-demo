@@ -1,5 +1,13 @@
-FROM node:19-alpine
-RUN apk add --no-cache libc6-compat
+FROM ubuntu:22.04
+
+RUN apt-get update && apt-get install -y curl
+
+RUN curl -sL https://deb.nodesource.com/setup_19.x | bash -
+
+RUN apt-get update && apt-get install -y nodejs
+
+#FROM node:19-alpine
+#RUN apk add --no-cache libc6-compat
 
 # Create app directory
 WORKDIR /app
