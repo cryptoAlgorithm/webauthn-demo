@@ -76,4 +76,4 @@ jobs:
       - name: Check for vulnerable dependencies
         if: always()
         run: |
-          npm audit --json | npx npm-audit-markdown --output /dev/stdout
+          npm audit
