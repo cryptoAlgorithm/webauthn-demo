@@ -1,9 +1,8 @@
 FROM ubuntu:22.04
 
+# Get and install node v19.x
 RUN apt-get update && apt-get install -y curl
-
 RUN curl -sL https://deb.nodesource.com/setup_19.x | bash -
-
 RUN apt-get update && apt-get install -y nodejs
 
 #FROM node:19-alpine
