@@ -33,6 +33,6 @@ module.exports = {
   // this setting is required for jest config using config files!
   coverageProvider: 'v8',
 
-  coverageReporters: ['html', 'json-summary'],
+  coverageReporters: ['html', 'text', 'json-summary'],
 }
 

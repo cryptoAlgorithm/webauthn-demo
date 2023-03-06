@@ -1,10 +1,10 @@
 # Workflow to run unit tests and code coverage and deploy the test and
 # and coverage report to GitHub Pages
-name: Tests & Coverage
+name: Pre-Merge Checks
 
 on:
-  # Runs on merge to main branch
-  push:
+  # Runs on pull request to main branch
+  pull_request:
     branches: [master, main]
 
   # Allows you to run this workflow manually from the Actions tab
@@ -18,22 +18,16 @@ permissions:
 
 # Allow one concurrent deployment
 concurrency:
-  group: "coverage-page"
+  group: "pre-merge-checks"
   cancel-in-progress: true
 
 jobs:
   # Single deploy job since we're just deploying
-  test-coverage:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+  pre-merge-checks:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-
-      - name: Setup Pages
-        uses: actions/configure-pages@v3
 
       #######################
       ## Dependencies
@@ -73,20 +67,14 @@ jobs:
           MDS_AUTH_WHITELIST: true
           # Write MDS json file to this location, if specified
           MDS_JSON_FILEPATH: /tmp/mds3.json
-        run: npm run coverage || true
+        #run: npm test -- --coverage --collectCoverageFrom='**/*.{js,jsx,mjs,ts,tsx}' --collectCoverageFrom='!./coverage/**' --coverageProvider='v8'
+        run: npm run coverage
 
-      - name: Create test and coverage badges
-        run: node ./ci/createBadges.js ./coverage/cov-badge.svg ./coverage/test-badge.svg
+      - name: Lint codebase
+        if: always()
+        run: npm run lint:eslint
 
-      - name: Prepare artifact
+      - name: Check for vulnerable dependencies
+        if: always()
         run: |
-          mv test-report.html coverage/
-
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v1
-        with:
-          path: './coverage/'
-
-      - name: Publish artifact to Pages
-        id: deployment
-        uses: actions/deploy-pages@v1
+          npm audit

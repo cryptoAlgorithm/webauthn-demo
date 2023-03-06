@@ -8,7 +8,10 @@
     "start": "next start",
     "lint": "next lint",
     "test": "jest",
-    "coverage": "jest --config=jest.coverage.js"
+    "coverage": "jest --config=jest.coverage.js",
+    "lint:eslint:html": "eslint -f html -o eslint-report.html",
+    "lint:eslint": "eslint .",
+    "dep-check": "npm audit --json | npx npm-audit-markdown --output npm-audit-report.md & npx markdown-to-html-cli --source npm-audit-report.md --output npm-audit-report.html"
   },
   "dependencies": {
     "@emotion/react": "^11.10.4",
@@ -30,6 +33,7 @@
     "@types/node": "18.11.6",
     "@types/react": "18.0.23",
     "@types/react-dom": "18.0.7",
+    "@typescript-eslint/eslint-plugin": "^5.54.0",
     "badge-maker": "^3.3.1",
     "dotenv": "^16.0.3",
     "eslint": "^8.2.0",
