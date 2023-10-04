@@ -26,7 +26,7 @@
     "pino": "^8.7.0",
     "react": "18.2.0",
     "react-dom": "18.2.0",
-    "zod": "^3.19.1"
+    "zod": "^3.22.3"
   },
   "devDependencies": {
     "@types/jsonwebtoken": "^8.5.9",
