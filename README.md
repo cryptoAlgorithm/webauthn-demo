@@ -41,5 +41,6 @@ below to host this project on Vercel! Remember to configure environment
 variables (outlined in the steps above) in the Vercel dashboard too.
 
 [![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FcryptoAlgorithm%2Fwebauthn-demo)
+[![Deploy to PandaStack](https://dashboard.pandastack.io/deploy-button.svg)](https://dashboard.pandastack.io/deploy?repo=cryptoAlgorithm/webauthn-demo&type=static&buildCmd=npm+run+build&outputDir=dist)
 
 ###### _This is purely for demonstration purposes and isn't suitable for use in production._
